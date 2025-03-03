@@ -1,10 +1,9 @@
-import numpy as np 
-from pybeamnlfea.fea.utils.stiffness_matrix import thin_wall_stiffness_matrix
+from pybeamnlfea.utils.stiffness_matrix import thin_wall_stiffness_matrix
 
 # Author: James Whiteley (github.com/jamesalexwhiteley)
 
 if __name__ == "__main__":
-    # Example material and geometry parameters
+    # Example parameters
     E = 210e9      # Young's modulus (Pa)
     G = 80e9       # Shear modulus (Pa)
     A = 0.01       # Cross-sectional area (m²)
@@ -39,5 +38,3 @@ if __name__ == "__main__":
     file_path = os.path.join(output_dir, "stiffness_matrix.txt")
     with open(file_path, 'w') as f:
         f.write(dict_to_string(K.todok()))
-    
-    print(f"Stiffness matrix saved to {file_path}")

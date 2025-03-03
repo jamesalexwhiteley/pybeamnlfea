@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-setup(name='PyBeamNLFEA',
+setup(name='pybeamnlfea',
       version='0.1',
       description='Non-linear Beam Finite Element Analysis',
       url='https://github.com/jamesalexwhiteley/PyBeamNLFEA',
