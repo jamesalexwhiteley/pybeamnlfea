@@ -6,13 +6,13 @@ if __name__ == "__main__":
     # Example parameters
     E = 210e9      # Young's modulus (Pa)
     G = 80e9       # Shear modulus (Pa)
-    A = 0.01       # Cross-sectional area (m²)
-    Ix = 1e-4      # Second moment of area about x-axis (m⁴)
-    Iy = 2e-4      # Second moment of area about y-axis (m⁴)
-    Iw = 1e-6      # Warping constant (m⁶)
-    J = 5e-5       # Torsion constant (m⁴)
+    A = 0.01       # Cross-sectional area (m2)
+    Ix = 1e-4      # Second moment of area about x-axis (m4)
+    Iy = 2e-4      # Second moment of area about y-axis (m4)
+    Iw = 1e-6      # Warping constant (m6)
+    J = 5e-5       # Torsion constant (m4)
     L = 2.0        # Element length (m)
-    
+
     # Create stiffness matrix
     K = thin_wall_stiffness_matrix(E, G, A, Ix, Iy, Iw, J, L)
 
@@ -26,7 +26,7 @@ if __name__ == "__main__":
         """Convert sparse dictionary to formatted string"""
         lines = []
         for (i, j), value in sparse_dict.items():
-            if abs(value) > 1e-10:  # Filter out near-zero values
+            if abs(value) > 1e-10: # Filter out near-zero values
                 lines.append(f"K[{i}, {j}] = {value:.6e}")
         return "\n".join(lines)
     

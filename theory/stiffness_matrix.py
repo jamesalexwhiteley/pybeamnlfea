@@ -258,30 +258,38 @@ for i in range(14):
 # sp.init_printing(use_unicode=True, fontsize='tiny')
 sp.pprint(K)
 
+# def dict_to_string(dok_dict):
+#     value_groups = {}
+#     for (i,j), val in dok_dict.items():
+#         if i <= j: # upper triangular 
+#             val_str = str(val).replace('*', '')
+#             if val_str not in value_groups:
+#                 value_groups[val_str] = []
+#             value_groups[val_str].append((i,j))
+    
+#     items = []
+#     used_pairs = set()
+    
+#     for val_str, pairs in value_groups.items():
+#         if len(pairs) > 1:
+#             combined_keys = [f"K_{{{p[0]+1},{p[1]+1}}}" for p in pairs]
+#             items.append(f"&{' = '.join(combined_keys)} = {val_str}")
+#             used_pairs.update(pairs)
+#         else:
+#             i,j = pairs[0]
+#             if (i,j) not in used_pairs:
+#                 items.append(f"&K_{{{i+1},{j+1}}} = {val_str}")
+#                 used_pairs.add((i,j))
+    
+#     return "" + " \\\\\n ".join(items) + ''""
+
 def dict_to_string(dok_dict):
-    value_groups = {}
-    for (i,j), val in dok_dict.items():
-        if i <= j: # upper triangular 
-            val_str = str(val).replace('*', '')
-            if val_str not in value_groups:
-                value_groups[val_str] = []
-            value_groups[val_str].append((i,j))
-    
     items = []
-    used_pairs = set()
-    
-    for val_str, pairs in value_groups.items():
-        if len(pairs) > 1:
-            combined_keys = [f"K_{{{p[0]+1},{p[1]+1}}}" for p in pairs]
-            items.append(f"&{' = '.join(combined_keys)} = {val_str}")
-            used_pairs.update(pairs)
-        else:
-            i,j = pairs[0]
-            if (i,j) not in used_pairs:
-                items.append(f"&K_{{{i+1},{j+1}}} = {val_str}")
-                used_pairs.add((i,j))
-    
-    return "" + " \\\\\n ".join(items) + ''""
+
+    for (i, j), val in sorted(dok_dict.items()):
+        val_str = str(val).replace('*', '')
+        items.append(f"&K_{{{i+1},{j+1}}} = {val_str}")
+    return " \\\\\n".join(items)
 
 output_folder = 'output_files'  
 os.makedirs(output_folder, exist_ok=True)  
