@@ -1,5 +1,5 @@
 import numpy as np 
-from PyBeamNLFEA.fea.utils.stiffness_matrix import thin_wall_stiffness_matrix
+from pybeamnlfea.fea.utils.stiffness_matrix import thin_wall_stiffness_matrix
 
 # Author: James Whiteley (github.com/jamesalexwhiteley)
 

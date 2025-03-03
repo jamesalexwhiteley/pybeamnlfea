@@ -1,4 +1,5 @@
 import numpy as np 
+from scipy.sparse import lil_matrix
 
 # Author: James Whiteley (github.com/jamesalexwhiteley)
 
@@ -10,7 +11,7 @@ def thin_wall_stiffness_matrix(E, G, A, Ix, Iy, Iw, J, L,
     
     Parameters:
     -----------
-    E : float
+    E : floats
         Young's modulus
     G : float
         Shear modulus
