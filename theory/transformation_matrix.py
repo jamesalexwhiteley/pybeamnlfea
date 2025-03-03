@@ -1,6 +1,7 @@
 import sympy as sp
-# from sympy import MatrixSymbol, Matrix, eye, zeros
 from sympy.physics.quantum import TensorProduct
+
+# Author: James Whiteley (github.com/jamesalexwhiteley)
 
 x0, y0 = sp.symbols('x0, y0')
 
