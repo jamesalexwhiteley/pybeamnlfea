@@ -7,7 +7,6 @@ from pybeamnlfea.model.section import Section
 from pybeamnlfea.model.element import Element 
 from pybeamnlfea.model.boundary import BoundaryCondition 
 from pybeamnlfea.model.load import Load 
-# from assembly import Assembler
 
 # Author: James Whiteley (github.com/jamesalexwhiteley)
 
@@ -22,8 +21,6 @@ class Frame:
         self.sections: Dict[str, Section] = {}
         self.boundary_conditions: Dict[int, BoundaryCondition] = {}
         self.loads: Dict[int, Load] = {}  
-        # self.assembler: Optional[Assembler] = None
-        # self.results: Dict = {}
         
     def add_node(self, x: float, y: float, z: float, node_id: int = None) -> Node:
         """Add a node to the frame."""
@@ -107,7 +104,3 @@ class Frame:
             raise ValueError(f"Node {node_id} not found in the frame")
         
         self.loads[node_id] = load_class(node_id, forces)
-    
-    # def initialize_assembly(self) -> None:
-    #     """Initialize the assembler with current elements and nodes."""
-    #     self.assembler = Assembler(self.elements, self.nodes)
