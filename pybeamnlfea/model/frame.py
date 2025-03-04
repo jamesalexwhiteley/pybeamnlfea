@@ -5,8 +5,9 @@ from pybeamnlfea.model.node import Node
 from pybeamnlfea.model.material import Material 
 from pybeamnlfea.model.section import Section 
 from pybeamnlfea.model.element import Element 
+from pybeamnlfea.model.boundary import BoundaryCondition 
+from pybeamnlfea.model.load import Load 
 # from assembly import Assembler
-# from boundary import BoundaryCondition
 
 # Author: James Whiteley (github.com/jamesalexwhiteley)
 
@@ -19,8 +20,8 @@ class Frame:
         self.elements: Dict[int, Element] = {}
         self.materials: Dict[str, Material] = {}
         self.sections: Dict[str, Section] = {}
-        # self.boundary_conditions: List[BoundaryCondition] = []
-        # self.loads: Dict[int, np.ndarray] = {}  # node_id -> force/moment vector
+        self.boundary_conditions: Dict[int, BoundaryCondition] = {}
+        self.loads: Dict[int, Load] = {}  
         # self.assembler: Optional[Assembler] = None
         # self.results: Dict = {}
         
@@ -28,7 +29,7 @@ class Frame:
         """Add a node to the frame."""
         if node_id is None:
             # Find the next available ID
-            node_id = 1 if not self.nodes else max(self.nodes.keys()) + 1
+            node_id = 0 if not self.nodes else max(self.nodes.keys()) + 1
         elif node_id in self.nodes:
             raise ValueError(f"Node ID {node_id} already exists")
         
@@ -78,7 +79,7 @@ class Frame:
         # Assign an ID to the element
         if element_id is None:
             # Find the next available ID
-            element_id = 1 if not self.elements else max(self.elements.keys()) + 1
+            element_id = 0 if not self.elements else max(self.elements.keys()) + 1
         elif element_id in self.elements:
             raise ValueError(f"Element ID {element_id} already exists")
         
@@ -89,21 +90,24 @@ class Frame:
         
         return element
         
-    # def add_boundary_condition(self, node_id: int, dof_restraints: Dict[int, float]) -> None:
-    #     """
-    #     Add boundary condition at a node.
-    #     dof_restraints: Dictionary mapping DOF indices (0-5) to prescribed values (usually 0 for fixed)
-    #     """
-    #     node = next(node for node in self.nodes if node.id == node_id)
-    #     bc = BoundaryCondition(node, dof_restraints)
-    #     self.boundary_conditions.append(bc)
+    def add_boundary_condition(self, node_id: int, constraints: List[bool], boundary_class) -> None:
+        """
+        Add a boundary condition to a node.
+        """
+        if node_id not in self.nodes:
+            raise ValueError(f"Node {node_id} not found in the frame")
         
-    # def add_load(self, node_id: int, force_vector: List[float]) -> None:
-    #     """Add a load (force/moment) at a node."""
-    #     if len(force_vector) != 6:
-    #         raise ValueError("Force vector must have 6 components [Fx, Fy, Fz, Mx, My, Mz]")
-    #     self.loads[node_id] = np.array(force_vector)
+        self.boundary_conditions[node_id] = boundary_class(node_id, constraints)
         
+    def add_nodal_load(self, node_id: int, forces: List[float], load_class) -> None:
+        """
+        Add a load to a node.
+        """
+        if node_id not in self.nodes:
+            raise ValueError(f"Node {node_id} not found in the frame")
+        
+        self.loads[node_id] = load_class(node_id, forces)
+    
     # def initialize_assembly(self) -> None:
     #     """Initialize the assembler with current elements and nodes."""
     #     self.assembler = Assembler(self.elements, self.nodes)

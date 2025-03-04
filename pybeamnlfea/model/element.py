@@ -31,7 +31,7 @@ class ThinWalledBeamElement(Element):
         # self.local_axes = self._initialize_local_axes()
 
     def __repr__(self) -> str:
-        """String representation of the node."""
+        """String representation of the element."""
         return f"Element({self.id}, nodes={self.nodes})"
         
     # def local_stiffness_matrix(self):
