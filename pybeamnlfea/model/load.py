@@ -12,7 +12,7 @@ class NodalLoad(Load):
     """Represents a force/moment load applied directly to a node"""
     def __init__(self, node_id: int, force_vector: np.ndarray):
         """
-        Initialize a nodal load.
+        Initialise a nodal load.    
         
         Args:
             node_id: node tag 

@@ -36,6 +36,11 @@ class Frame:
         
         return node
     
+    def add_nodes(self, coords: list[list[float]]) -> None:
+        """Add nodes to the frame."""
+        for coord in coords: 
+            self.add_node(coord[0], coord[1], coord[2])
+    
     def add_material(self, name: str, material: Material) -> None:
         """
         Add a material to the frame. 
@@ -86,6 +91,11 @@ class Frame:
         self.elements[element_id] = element
         
         return element
+    
+    def add_elements(self, node_ids_list: List[list[int]], material_name: str, section_name: str, element_class=Element, element_id=None) -> None:
+        """Add elements to the frame."""
+        for node_ids in node_ids_list: 
+            self.add_element(node_ids, material_name, section_name, element_class, element_id)
         
     def add_boundary_condition(self, node_id: int, constraints: List[bool], boundary_class) -> None:
         """

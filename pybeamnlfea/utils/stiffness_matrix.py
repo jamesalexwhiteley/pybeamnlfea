@@ -43,7 +43,7 @@ def thin_wall_stiffness_matrix(E, G, A, Ix, Iy, Iw, J, L,
     K : scipy.sparse.csr_matrix
         Element stiffness matrix (14x14)
     """
-    # Initialize a sparse matrix (using lil_matrix for efficient assembly)
+    # Initialise a sparse matrix (using lil_matrix for efficient assembly)
     K = lil_matrix((14, 14))
     
     # Helper function to set symmetric terms

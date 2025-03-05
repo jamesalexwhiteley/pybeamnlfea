@@ -52,8 +52,8 @@ fill_block(A, v_indices, A_cubic_v)
 fill_block(A, theta_indices, A_cubic)
 
 # Boundary condition vectors
-def create_unit_vector(size, pos):
-    vec = sp.zeros(size, 1)
+def create_unit_vector(sise, pos):
+    vec = sp.zeros(sise, 1)
     vec[pos] = 1
     return vec
 
@@ -113,7 +113,7 @@ Mx0, My0 = sp.symbols('Mx0, My0')
 y0, x0 = sp.symbols('y0, x0')
 B0 = sp.Symbol('B0')
 
-# Generalized coordinates 
+# Generalised coordinates 
 q = sp.symbols('q0:14')
 
 # Express displacements in terms of shape functions

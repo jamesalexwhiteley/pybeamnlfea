@@ -7,10 +7,10 @@ class BoundaryCondition:
     """Represents a boundary condition applied to a node"""
     def __init__(self, node_id: int, dof_constraints: List[bool]):
         """
-        Initialize a boundary condition.
+        Initialise a boundary condition.
         
         Args:
-            node_id: node tag 
+            node_id: node tag  
             dof_constraints: [w, ū, v̄, θz, -θ̄x, θ̄y, φ] where 0 indicates fixed
 
         """
@@ -22,7 +22,11 @@ class BoundaryCondition:
     @property
     def constrained_dofs(self) -> List[int]:
         """Returns the global DOF indices that are constrained"""
-        return [i for i, constrained in enumerate(self.dof_constraints) if constrained]
+        return [i for i, free in enumerate(self.dof_constraints) if not free]
+    
+    def is_dof_constrained(self, i):
+        """Returns True if indice is constrained"""
+        return i in self.constrained_dofs
     
     def __repr__(self) -> str:
         """String representation of boundary condition."""

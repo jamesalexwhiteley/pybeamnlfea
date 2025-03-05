@@ -53,8 +53,8 @@ fill_block(A, v_indices, A_cubic_v)
 fill_block(A, theta_indices, A_cubic)
 
 # Boundary condition vectors
-def create_unit_vector(size, pos):
-    vec = sp.zeros(size, 1)
+def create_unit_vector(sise, pos):
+    vec = sp.zeros(sise, 1)
     vec[pos] = 1
     return vec
 
@@ -255,7 +255,7 @@ for i in range(14):
             K[i,j] += sp.integrate(integrand, (z, 0, L))
 
 # print(K[5, 6])
-# sp.init_printing(use_unicode=True, fontsize='tiny')
+# sp.init_printing(use_unicode=True, fontsise='tiny')
 sp.pprint(K)
 
 # def dict_to_string(dok_dict):

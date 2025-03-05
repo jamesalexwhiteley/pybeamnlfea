@@ -9,7 +9,7 @@ class Material:
     """
     def __init__(self, **kwargs):
         """
-        Initialize a generic material.
+        Initialise a generic material.
         
         Parameters
         ----------
@@ -36,13 +36,13 @@ class LinearElastic(Material):
             Additional material properties
         """
         super().__init__(**kwargs)
-        self.young_modulus = young_modulus
-        self.poisson_ratio = poisson_ratio
+        self.E = young_modulus
+        self.nu = poisson_ratio
         
     @property
-    def shear_modulus(self) -> float:
+    def G(self) -> float:
         """
         Calculate and return the shear modulus (G) 
         G = E / (2 * (1 + nu))
         """
-        return self.young_modulus / (2 * (1 + self.poisson_ratio))
+        return self.E / (2 * (1 + self.nu))

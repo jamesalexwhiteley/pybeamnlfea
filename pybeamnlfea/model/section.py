@@ -7,9 +7,9 @@ class Section:
     """
     Cross-section properties. 
     """
-    def __init__(self, A: float, Ix: float, Iy: float, J: float, Iw: float = 0.0, **kwargs):
+    def __init__(self, A: float, Ix: float, Iy: float, J: float, Iw: float, x0: float, y0: float, **kwargs):
         """
-        Initialize a cross-section with its geometric properties.
+        Initialise a cross-section with its geometric properties.
         
         Parameters
         ----------
@@ -31,6 +31,9 @@ class Section:
         self.Iy = Iy
         self.J = J
         self.Iw = Iw
+
+        self.x0 = x0
+        self.y0 = y0
         
         # Store any additional properties
         for key, value in kwargs.items():

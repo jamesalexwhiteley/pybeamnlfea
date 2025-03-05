@@ -2,7 +2,7 @@ import numpy as np
 
 # Author: James Whiteley (github.com/jamesalexwhiteley)
 
-class Visualizer:
+class Visualiser:
     def __init__(self, results):
         self.results = results
         
