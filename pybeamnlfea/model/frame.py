@@ -7,6 +7,9 @@ from pybeamnlfea.model.section import Section
 from pybeamnlfea.model.element import Element 
 from pybeamnlfea.model.boundary import BoundaryCondition 
 from pybeamnlfea.model.load import Load 
+from pybeamnlfea.solver.assembly import Assembler 
+from pybeamnlfea.solver.linear import LinearSolver 
+from pybeamnlfea.postprocess.results import Results 
 
 # Author: James Whiteley (github.com/jamesalexwhiteley)
 
@@ -58,7 +61,7 @@ class Frame:
             raise ValueError(f"Section '{name}' already exists")
         self.sections[name] = section
             
-    def add_element(self, node_ids: List[int], material_name: str, section_name: str, element_class=Element, element_id=None) -> Element:
+    def add_element(self, node_ids: List[int], material_name: str, section_name: str, element_class: Element = Element, element_id: int=None) -> Element:
         """
         Add an element to the frame, connecting specified nodes with given properties.
         """
@@ -98,19 +101,23 @@ class Frame:
             self.add_element(node_ids, material_name, section_name, element_class, element_id)
         
     def add_boundary_condition(self, node_id: int, constraints: List[bool], boundary_class) -> None:
-        """
-        Add a boundary condition to a node.
-        """
+        """Add a boundary condition to a node."""
         if node_id not in self.nodes:
             raise ValueError(f"Node {node_id} not found in the frame")
         
         self.boundary_conditions[node_id] = boundary_class(node_id, constraints)
         
     def add_nodal_load(self, node_id: int, forces: List[float], load_class) -> None:
-        """
-        Add a load to a node.
-        """
+        """Add a load to a node."""
         if node_id not in self.nodes:
             raise ValueError(f"Node {node_id} not found in the frame")
         
         self.loads[node_id] = load_class(node_id, forces)
+
+    def solve(self, solver_type: str ='direct') -> None:
+        """Solve the model with a LinearSolver."""
+        
+        assembler = Assembler(self)
+        solver = LinearSolver(solver_type)
+        displacements, element_forces = solver.solve(assembler)
+        return Results(assembler, displacements, element_forces)

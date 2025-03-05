@@ -50,15 +50,15 @@ class ThinWalledBeamElement(Element):
         else:
             temp = np.array([0, 0, 1])
         
-        # Compute local y axis 
-        b1 = np.cross(temp, c)
-        b = b1 / np.linalg.norm(b1)
-        
         # Compute local x axis 
-        a1 = np.cross(c, b)
+        a1 = np.cross(temp, c)
         a = a1 / np.linalg.norm(a1)
         
-        # Return the three unit vectors as a rotation matrix from local to global
+        # Compute local x axis 
+        b1 = np.cross(c, a)
+        b = b1 / np.linalg.norm(b1)
+        
+        # Return the three unit vectors as a rotation matrix from local to globals
         self.R = np.vstack((a, b, c))
 
     def compute_local_stiffness_matrix(self):
@@ -137,7 +137,7 @@ class ThinWalledBeamElement(Element):
         """
         C = self.get_controid_transformation_matrix()
         Q = self.get_local_to_global_transformation_matrix()
-        # self.T = np.linalg.inv(C @ Q @ np.linalg.inv(C))                                                   # NOTE 
+        # self.T = np.linalg.inv(C @ Q @ np.linalg.inv(C))                                                   
         self.T = C @ Q
  
         return self.T

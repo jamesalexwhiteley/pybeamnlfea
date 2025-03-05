@@ -1,7 +1,6 @@
 import numpy as np 
 from pybeamnlfea.model.load import NodalLoad 
-from scipy.sparse import coo_matrix 
-from scipy.sparse.linalg import spsolve
+from scipy.sparse import coo_matrix, csr_matrix
 
 # Author: James Whiteley (github.com/jamesalexwhiteley)
 
@@ -35,46 +34,81 @@ class Assembler:
         
         self.total_dofs = current_dof
 
+    # def assemble_stiffness_matrix(self):
+    #     """Assemble the global stiffness matrix using a direct approach."""
+    #     # Initialize sparse matrix in COO format 
+    #     rows, cols, data = [], [], []
+        
+    #     # Assemble contributions from each element
+    #     for element_id, element in self.frame.elements.items():
+    #         # Get element stiffness matrix
+    #         k_local = element.compute_local_stiffness_matrix() 
+
+    #         # Transform to global coordinates 
+    #         T = element.compute_transformation_matrix()
+    #         k_elem = T.transpose() @ k_local @ T
+            
+    #         # Get global DOF indices for this element 
+    #         element_dofs = []
+    #         for node in element.nodes:
+    #             for i in range(node.ndof):
+    #                 global_dof = self.dof_map.get((node.id, i), -1)
+    #                 element_dofs.append(global_dof)
+
+    #         # Simpler approach: Iterate through all DOF pairs and add non-constrained ones
+    #         for i_local in range(len(element_dofs)):
+    #             i_global = element_dofs[i_local]
+    #             if i_global < 0:  # Skip constrained DOFs
+    #                 continue
+                    
+    #             for j_local in range(len(element_dofs)):
+    #                 j_global = element_dofs[j_local]
+    #                 if j_global < 0:  # Skip constrained DOFs
+    #                     continue
+                        
+    #                 # Add to sparse matrix components
+    #                 rows.append(i_global)
+    #                 cols.append(j_global)
+    #                 data.append(k_elem[i_local, j_local])
+        
+    #     # Create the sparse matrix in COO format and convert to CSR
+    #     K = coo_matrix((data, (rows, cols)), shape=(self.total_dofs, self.total_dofs))
+    #     return K.tocsr()
+
     def assemble_stiffness_matrix(self):
-        """Assemble the global stiffness matrix using vectorised operations."""
-        # Initialise sparse matrix in COO format 
-        rows, cols, data = [], [], []
+        """Assemble the global stiffness matrix."""
+        # Initialize the global stiffness matrix with zeros
+        K = np.zeros((self.total_dofs, self.total_dofs))
         
         # Assemble contributions from each element
         for element_id, element in self.frame.elements.items():
-            # Get element stiffness matrix
-            k_local = element.compute_local_stiffness_matrix() 
-
-            # Transform to global coordinates 
-            T = element.compute_transformation_matrix()
-            k_elem = T.transpose() @ k_local @ T
+            # Get element stiffness matrix in local coordinates
+            k_local = element.compute_local_stiffness_matrix()
             
-            # Get global DOF indices for this element 
+            # Transform to global coordinates
+            T = element.compute_transformation_matrix()
+            k_elem = T.transpose() @ k_local @ T                                                                        
+            
+            # Get global DOF indices for this element
             element_dofs = []
             for node in element.nodes:
                 for i in range(node.ndof):
                     global_dof = self.dof_map.get((node.id, i), -1)
                     element_dofs.append(global_dof)
-
-            # Add only non-constrained DOFs using vectorised operations
-            valid_dofs = np.array(element_dofs) >= 0
-            valid_indices = np.where(valid_dofs)[0]
             
-            if len(valid_indices) > 0:                
-                # For each valid DOF pair, add contribution to matrix
-                for i_local, i_global_idx in enumerate(valid_indices):
-                    i_global = element_dofs[i_global_idx]
-                    for j_local, j_global_idx in enumerate(valid_indices):
-                        j_global = element_dofs[j_global_idx]
-                        
-                        # Add to sparse matrix components
-                        rows.append(i_global)
-                        cols.append(j_global)
-                        data.append(k_elem[i_local, j_local])
+            # Add element stiffness contributions to the global stiffness matrix
+            for i_local, i_global in enumerate(element_dofs):
+                if i_global < 0:  # Skip constrained DOFs
+                    continue
+                    
+                for j_local, j_global in enumerate(element_dofs):
+                    if j_global < 0:  # Skip constrained DOFs
+                        continue
+                    
+                    # Add element contribution to global stiffness matrix
+                    K[i_global, j_global] += k_elem[i_local, j_local]
         
-        # Create the sparse matrix in COO format and convert to CSR
-        K = coo_matrix((data, (rows, cols)), shape=(self.total_dofs, self.total_dofs))
-        return K.tocsr()
+        return csr_matrix(K)
     
     def assemble_force_vector(self):
         """
@@ -98,5 +132,4 @@ class Assembler:
                         F[global_dof] += force_vector[local_dof]
         
         return F
-        
         

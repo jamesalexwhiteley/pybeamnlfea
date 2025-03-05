@@ -30,33 +30,30 @@ class LinearSolver(Solver):
         # Solve the system using sparse solver
         if self.solver_type == 'direct':
             # Direct solver for Ku = F
-            u = spsolve(K, F)
+            self.u = spsolve(K, F)
 
-        # elif self.solver_type == 'iterative':
-        #     # Can use iterative solvers for large systems
-        #     from scipy.sparse.linalg import cg
-        #     u, info = cg(K, F)
-        #     if info != 0:
-        #         print(f"Warning: Conjugate gradient did not converge. Info: {info}")
-        # else:
-        #     raise ValueError(f"Unknown solver type: {self.solver_type}")
+        elif self.solver_type == 'iterative':
+            # Iterative solvers for large systems
+            from scipy.sparse.linalg import cg
+            u, info = cg(K, F)
+            if info != 0:
+                print(f"Warning: Conjugate gradient did not converge. Info: {info}")
+        else:
+            raise ValueError(f"Unknown solver type: {self.solver_type}")
             
-        # # Create a dictionary mapping node IDs and DOFs to displacements
-        # displacements = {}
-        # for (node_id, dof_idx), global_dof in assembler.dof_map.items():
-        #     if global_dof >= 0:  # Only for unconstrained DOFs
-        #         displacements[(node_id, dof_idx)] = u[global_dof]
-        #     else:
-        #         # For constrained DOFs, displacement is zero
-        #         displacements[(node_id, dof_idx)] = 0.0
-                
-        # # Store results in assembler or return them
-        # assembler.displacements = displacements
+        # Create a dictionary mapping node IDs and DOFs to displacements
+        displacements = {}
+        for (node_id, dof_idx), global_dof in assembler.dof_map.items():
+            if global_dof >= 0: # Unconstrained DOFs
+                displacements[(node_id, dof_idx)] = self.u[global_dof]
+            else:
+                # For constrained DOFs, displacement is zero
+                displacements[(node_id, dof_idx)] = 0.0
         
-        # # Calculate element forces and stresses if needed
-        # self._calculate_element_results(assembler, u)
+        # Calculate element forces 
+        element_forces = self._calculate_element_results(assembler, self.u)
         
-        # return displacements
+        return displacements, element_forces
     
     def _calculate_element_results(self, assembler, u):
         """
@@ -98,8 +95,7 @@ class LinearSolver(Solver):
             element_forces[element_id] = {
                 'local_displacements': local_u,
                 'local_forces': local_forces,
-                'global_displacements': element_u
+                # 'global_displacements': element_u
             }
-        
-        # Store results in assembler
-        assembler.element_forces = element_forces
+
+        return element_forces

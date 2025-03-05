@@ -72,6 +72,18 @@ class Node:
         """String representation of the node."""
         return f"Node({self.id}, coords={self.coords})"
     
+    def distance_to(self, other_node: 'Node') -> float:
+        """
+        Calculate Euclidean distance to another node.
+        
+        Args:
+            other_node: Another Node object
+            
+        Returns:
+            Float: Euclidean distance between the two nodes
+        """
+        return np.linalg.norm(self.coords - other_node.coords)
+    
     def set_coords(self, x: Optional[float] = None, y: Optional[float] = None, z: Optional[float] = None) -> None:
         """
         Update node coordinates.
@@ -87,15 +99,3 @@ class Node:
             self.coords[1] = y
         if z is not None:
             self.coords[2] = z
-    
-    def distance_to(self, other_node: 'Node') -> float:
-        """
-        Calculate Euclidean distance to another node.
-        
-        Args:
-            other_node: Another Node object
-            
-        Returns:
-            Float: Euclidean distance between the two nodes
-        """
-        return np.linalg.norm(self.coords - other_node.coords)
