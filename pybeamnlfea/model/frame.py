@@ -114,10 +114,10 @@ class Frame:
         
         self.loads[node_id] = load_class(node_id, forces)
 
-    def solve(self, solver_type: str ='direct') -> None:
-        """Solve the model with a LinearSolver."""
+    # def solve(self, solver_type: str ='direct') -> None:
+    #     """Solve the model with a LinearSolver."""
         
-        assembler = Assembler(self)
-        solver = LinearSolver(solver_type)
-        displacements, element_forces = solver.solve(assembler)
-        return Results(assembler, displacements, element_forces)
+    #     assembler = Assembler(self)
+    #     solver = LinearSolver(solver_type)
+    #     displacements, element_forces = solver.solve(assembler)
+    #     return Results(assembler, displacements, element_forces)

@@ -90,8 +90,8 @@ for i in range(14):
         N[i] = create_cubic_shape_function(coeffs, i in [6, 13])
 
 N = [sp.simplify(n) for n in N]
-# for n in N:
-#     print(n)
+for n in N:
+    print(n)
 
 E, G = sp.symbols('E G')
 A = sp.Symbol('A')
@@ -256,7 +256,7 @@ for i in range(14):
 
 # print(K[5, 6])
 # sp.init_printing(use_unicode=True, fontsise='tiny')
-sp.pprint(K)
+# sp.pprint(K)
 
 # def dict_to_string(dok_dict):
 #     value_groups = {}
@@ -283,18 +283,18 @@ sp.pprint(K)
     
 #     return "" + " \\\\\n ".join(items) + ''""
 
-def dict_to_string(dok_dict):
-    items = []
+# def dict_to_string(dok_dict):
+#     items = []
 
-    for (i, j), val in sorted(dok_dict.items()):
-        val_str = str(val).replace('*', '')
-        items.append(f"&K_{{{i+1},{j+1}}} = {val_str}")
-    return " \\\\\n".join(items)
+#     for (i, j), val in sorted(dok_dict.items()):
+#         val_str = str(val).replace('*', '')
+#         items.append(f"&K_{{{i+1},{j+1}}} = {val_str}")
+#     return " \\\\\n".join(items)
 
-output_folder = 'output_files'  
-os.makedirs(output_folder, exist_ok=True)  
+# output_folder = 'output_files'  
+# os.makedirs(output_folder, exist_ok=True)  
 
-# Write to subfolder
-file_path = os.path.join(output_folder, 'stiffness_matrix.txt')
-with open(file_path, 'w') as f:
-    f.write(dict_to_string(K.todok()))
+# # Write to subfolder
+# file_path = os.path.join(output_folder, 'stiffness_matrix.txt')
+# with open(file_path, 'w') as f:
+#     f.write(dict_to_string(K.todok()))

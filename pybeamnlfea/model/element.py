@@ -13,11 +13,6 @@ class Element:
     def __init__(self, **kwargs):
         """
         Initialise a generic element.
-        
-        Parameters
-        ----------
-        **kwargs : dict
-            Material properties
         """
         # Store additional properties
         for key, value in kwargs.items():
@@ -75,6 +70,7 @@ class ThinWalledBeamElement(Element):
         E = self.material.E
         G = self.material.G
         L = node0.distance_to(node1)
+        self.length = L
 
         # geoemtric stiffness components 
         P0=0
@@ -137,8 +133,8 @@ class ThinWalledBeamElement(Element):
         """
         C = self.get_controid_transformation_matrix()
         Q = self.get_local_to_global_transformation_matrix()
-        # self.T = np.linalg.inv(C @ Q @ np.linalg.inv(C))                                                   
-        self.T = C @ Q
+        self.T = np.linalg.inv(C @ Q @ np.linalg.inv(C))                                # NOTE                                         
+        # self.T = C @ Q
  
         return self.T
         
