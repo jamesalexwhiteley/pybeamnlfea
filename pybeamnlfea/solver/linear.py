@@ -30,8 +30,7 @@ class LinearSolver(Solver):
         # Solve the system using sparse solver
         if self.solver_type == 'direct':
             # Direct solver for Ku = F
-            self.u = spsolve(K, F)
-            # print(self.u)
+            u = spsolve(K, F)
 
         elif self.solver_type == 'iterative':
             # Iterative solvers for large systems
@@ -43,7 +42,7 @@ class LinearSolver(Solver):
             raise ValueError(f"Unknown solver type: {self.solver_type}")
             
         # Calculate nodal displacements forces 
-        nodal_displacements = self._get_nodal_displacements(assembler, self.u)
+        nodal_displacements = self._get_nodal_displacements(assembler, u)
 
         return nodal_displacements
         

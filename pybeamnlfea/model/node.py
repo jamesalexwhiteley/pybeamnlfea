@@ -37,16 +37,16 @@ class Node:
         # # For tracking boundary conditions applied to this node
         # self.constrained_dofs: Dict[int, float] = {}  # dof_index -> prescribed value
         
-        # Dictionary to map DOF indices to their physical meaning
-        self.dof_names = {
-            0: "w",       # translation along local z
-            1: "ū",       # translation along local x
-            2: "v̄",       # translation along local y
-            3: "θz",      # rotation about local z
-            4: "-θ̄x",     # negative rotation about local x
-            5: "θ̄y",      # rotation about local y
-            6: "φ"        # warping (dθz/dz)
-        }
+        # # Dictionary to map DOF indices to their physical meaning
+        # self.dof_names = {
+        #     0: "w",       # translation along local z
+        #     1: "ū",       # translation along local x
+        #     2: "v̄",       # translation along local y
+        #     3: "θz",      # rotation about local z
+        #     4: "-θ̄x",     # negative rotation about local x
+        #     5: "θ̄y",      # rotation about local y
+        #     6: "φ"        # warping (dθz/dz)
+        # }
 
     @property
     def ndof(self) -> float:

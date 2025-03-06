@@ -87,7 +87,7 @@ class Assembler:
             
             # Transform to global coordinates
             T = element.compute_transformation_matrix()
-            k_elem = T.transpose() @ k_local @ T                                                                        
+            k_elem = T.transpose() @ k_local @ T                                    
             
             # Get global DOF indices for this element
             element_dofs = []

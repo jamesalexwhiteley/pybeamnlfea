@@ -30,30 +30,60 @@ class ThinWalledBeamElement(Element):
         """String representation of the element."""
         return f"Element({self.id}, nodes={self.nodes})"
 
-    def _initialise_local_axes(self):
-        """Compute local x, y, z axes based on element geometry."""
+    # def _initialise_local_axes(self):
+    #     """Compute local x, y, z axes based on element geometry."""
 
-        # Compute local z axis 
-        c1 = self.nodes[1].coords - self.nodes[0].coords
-        c = c1 / np.linalg.norm(c1)  
+    #     # Compute local z axis 
+    #     c1 = self.nodes[1].coords - self.nodes[0].coords
+    #     c = c1 / np.linalg.norm(c1)  
         
-        # Find a vector not parallel to c to use for cross product
-        if abs(c[0]) < abs(c[1]) and abs(c[0]) < abs(c[2]):
-            temp = np.array([1, 0, 0])
-        elif abs(c[1]) < abs(c[2]):
-            temp = np.array([0, 1, 0])
+    #     # Find a vector not parallel to c to use for cross product
+    #     if abs(c[0]) < abs(c[1]) and abs(c[0]) < abs(c[2]):
+    #         temp = np.array([1, 0, 0])
+    #     elif abs(c[1]) < abs(c[2]):
+    #         temp = np.array([0, 1, 0])
+    #     else:
+    #         temp = np.array([0, 0, 1])
+        
+    #     # Compute local x axis 
+    #     a1 = np.cross(temp, c)
+    #     a = a1 / np.linalg.norm(a1)
+        
+    #     # Compute local x axis 
+    #     b1 = np.cross(c, a)
+    #     b = b1 / np.linalg.norm(b1)
+        
+    #     # Return the three unit vectors as a rotation matrix from local to globals
+    #     self.R = np.vstack((a, b, c))
+
+    def _initialise_local_axes(self):
+        """
+        Compute local coordinate system
+            - local z axis is along the member direction
+            - local x and y axes are derived from projections of global x and y
+        """
+        # Compute local z axis along member direction
+        c = self.nodes[1].coords - self.nodes[0].coords
+        c = c / np.linalg.norm(c)
+        
+        # Global x axis
+        global_x = np.array([1.0, 0.0, 0.0])
+        
+        if np.abs(np.dot(c, global_x)) > 0.95:
+            # If nearly parallel to global x, use global y instead
+            ref_vector = np.array([0.0, 1.0, 0.0])
         else:
-            temp = np.array([0, 0, 1])
+            ref_vector = global_x
         
-        # Compute local x axis 
-        a1 = np.cross(temp, c)
-        a = a1 / np.linalg.norm(a1)
+        # Compute local y axis perpendicular to local z
+        b = np.cross(ref_vector, c)
+        b = b / np.linalg.norm(b)
         
-        # Compute local x axis 
-        b1 = np.cross(c, a)
-        b = b1 / np.linalg.norm(b1)
+        # Compute local x axis to complete right-handed system
+        a = np.cross(c, b)
+        a = a / np.linalg.norm(a)
         
-        # Return the three unit vectors as a rotation matrix from local to globals
+        # Create rotation matrix from local to global
         self.R = np.vstack((a, b, c))
 
     def compute_local_stiffness_matrix(self):
@@ -133,8 +163,7 @@ class ThinWalledBeamElement(Element):
         """
         C = self.get_controid_transformation_matrix()
         Q = self.get_local_to_global_transformation_matrix()
-        self.T = np.linalg.inv(C @ Q @ np.linalg.inv(C))                                # NOTE                                         
-        # self.T = C @ Q
+        self.T = np.linalg.inv(C @ Q @ np.linalg.inv(C))                                     
  
         return self.T
         
