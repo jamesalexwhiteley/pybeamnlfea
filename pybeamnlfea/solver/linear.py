@@ -45,11 +45,6 @@ class LinearSolver(Solver):
         nodal_displacements = self._get_nodal_displacements(assembler, u)
 
         return nodal_displacements
-        
-        # # Calculate element forces 
-        # element_forces_and_displacements = self._calculate_element_results(assembler, self.u)
-        
-        # return nodal_displacements, element_forces_and_displacements
     
     def _get_nodal_displacements(self, assembler, u):
         """
@@ -65,42 +60,3 @@ class LinearSolver(Solver):
 
         return nodal_displacements
     
-    # def _calculate_element_results(self, assembler, u):
-    #     """
-    #     Calculate element forces and stresses.
-    #     """
-    #     frame = assembler.frame
-    #     element_forces_and_displacements = {}
-        
-    #     for element_id, element in frame.elements.items():
-    #         # Get element DOFs
-    #         element_dofs = []
-    #         element_u = []
-            
-    #         for node in element.nodes:
-    #             for i in range(node.ndof):
-    #                 global_dof = assembler.dof_map.get((node.id, i), -1)
-    #                 element_dofs.append(global_dof)
-                    
-    #                 # Get displacement value (0 if constrained)
-    #                 if global_dof >= 0:
-    #                     element_u.append(u[global_dof])
-    #                 else:
-    #                     element_u.append(0.0)
-
-    #         # Transform displacements to local coordinates
-    #         element_u = np.array(element_u)
-    #         T = element.compute_transformation_matrix()
-    #         local_u = T @ element_u 
-            
-    #         # Compute local element forces
-    #         k_local = element.compute_local_stiffness_matrix()
-    #         local_forces = k_local @ local_u
-            
-    #         # Store results
-    #         element_forces_and_displacements[element_id] = {
-    #             'local_displacements': local_u,
-    #             'local_forces': local_forces,
-    #         }
-
-    #     return element_forces_and_displacements

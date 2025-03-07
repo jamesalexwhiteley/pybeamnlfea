@@ -78,109 +78,57 @@ class Results:
         """
         return self.element_forces.get(element_id, None)
     
-    # def calculate_element_deflection(self, element_id, num_points=100):
-    #     """
-    #     Calculate deflected shape of an element in its local coordinate system
-    #     """
-    #     element = self.frame.elements[element_id]
-    #     L = element.length
-    #     local_disps = self.local_element_displacements[element_id]
-        
-    #     # Create points along element length
-    #     c = np.linspace(0, L, num_points)
-    #     deflection = np.zeros((num_points, 6))  # For 6 deflection components (w, u, v, θz, θx, θy)
-        
-    #     if len(element.nodes) == 2 and len(local_disps) == 14:
-    #         # First node 
-    #         w1, u1, v1 = local_disps[0], local_disps[1], local_disps[2]  # Translations 
-    #         theta_z1, theta_x1, theta_y1, phi1 = local_disps[3], local_disps[4], local_disps[5], local_disps[6]  # Rotations
-            
-    #         # Second node 
-    #         w2, u2, v2 = local_disps[7], local_disps[8], local_disps[9]  # Translations 
-    #         theta_z2, theta_x2, theta_y2, phi2 = local_disps[10], local_disps[11], local_disps[12], local_disps[13]  # Rotations
-            
-    #         for i, z in enumerate(c):
-    #             # Calculate all 14 shape functions at point z
-    #             N = [
-    #                 (L - z)/L,                          # N1
-    #                 (L**3 - 3*L*z**2 + 2*z**3)/L**3,    # N2
-    #                 (L**3 - 3*L*z**2 + 2*z**3)/L**3,    # N3
-    #                 (L**3 - 3*L*z**2 + 2*z**3)/L**3,    # N4
-    #                 -z + 2*z**2/L - z**3/L**2,          # N5
-    #                 z - 2*z**2/L + z**3/L**2,           # N6
-    #                 z - 2*z**2/L + z**3/L**2,           # N7
-    #                 z/L,                                # N8
-    #                 z**2*(3*L - 2*z)/L**3,              # N9
-    #                 z**2*(3*L - 2*z)/L**3,              # N10
-    #                 z**2*(3*L - 2*z)/L**3,              # N11
-    #                 z**2*(L - z)/L**2,                  # N12
-    #                 z**2*(-L + z)/L**2,                 # N13
-    #                 z**2*(-L + z)/L**2                  # N14
-    #             ]
-
-    #             u_prime1, u_prime2 = theta_y1, theta_y2
-    #             v_prime1, v_prime2 = theta_x1, theta_x2
-    #             # theta1, theta2, theta_prime1, theta_prime2 = theta_z1, theta_z2, phi1, phi2
-                
-    #             # Axial deflection (w)
-    #             deflection[i, 0] = N[0]*w1 + N[7]*w2
-
-    #             # Transverse deflection in x-direction (ū)
-    #             deflection[i, 1] = N[1]*u1 + N[5]*u_prime1 + N[8]*u2 + N[12]*u_prime2
-
-    #             # Transverse deflection in y-direction (v̄)
-    #             deflection[i, 2] = N[2]*v1 + N[4]*v_prime1 + N[9]*v2 + N[11]*v_prime2
-        
-    #     return c, deflection
-
     def calculate_element_deflection(self, element_id, num_points=100):
         """
-        Calculate deflected shape using Hermite shape functions
+        Calculate deflected shape of an element in its local coordinate system
         """
         element = self.frame.elements[element_id]
         L = element.length
         local_disps = self.local_element_displacements[element_id]
         
         # Create points along element length
-        xi_values = np.linspace(0, 1, num_points)
-        c = xi_values * L
+        c = np.linspace(0, L, num_points)
+        deflection = np.zeros((num_points, 6))  # For 6 deflection components (w, u, v, θz, θx, θy)
         
-        # Initialize deflection array
-        deflection = np.zeros((num_points, 3))
-        
-        # Extract displacements
-        # First node
-        w1 = local_disps[0]
-        u1 = local_disps[1]
-        v1 = local_disps[2]
-        theta_z1 = local_disps[3]
-        theta_x1 = local_disps[4]  # We'll try both signs of this value
-        theta_y1 = local_disps[5]
-        
-        # Second node
-        w2 = local_disps[7]
-        u2 = local_disps[8]
-        v2 = local_disps[9]
-        theta_z2 = local_disps[10]
-        theta_x2 = local_disps[11]  # We'll try both signs of this value
-        theta_y2 = local_disps[12]
-        
-        for i, xi in enumerate(xi_values):
-            # Hermite shape functions
-            H1 = 1 - 3*xi**2 + 2*xi**3
-            H2 = L*(xi - 2*xi**2 + xi**3)
-            H3 = 3*xi**2 - 2*xi**3
-            H4 = L*(-xi**2 + xi**3)
+        if len(element.nodes) == 2 and len(local_disps) == 14:
+            # First node 
+            w1, u1, v1 = local_disps[0], local_disps[1], local_disps[2]  # Translations 
+            theta_z1, theta_x1, theta_y1, phi1 = local_disps[3], local_disps[4], local_disps[5], local_disps[6]  # Rotations
             
-            # Axial deflection (w) - linear interpolation
-            deflection[i, 0] = (1-xi)*w1 + xi*w2
+            # Second node 
+            w2, u2, v2 = local_disps[7], local_disps[8], local_disps[9]  # Translations 
+            theta_z2, theta_x2, theta_y2, phi2 = local_disps[10], local_disps[11], local_disps[12], local_disps[13]  # Rotations
             
-            # Transverse deflection in x-direction (u)
-            deflection[i, 1] = H1*u1 + H2*theta_y1 + H3*u2 + H4*theta_y2
-            
-            # Transverse deflection in y-direction (v)
-            # Try the approach that matches the standard sign convention in beam theory
-            # (positive θx causes negative v displacement)
-            deflection[i, 2] = H1*v1 - H2*theta_x1 + H3*v2 - H4*theta_x2
+            for i, z in enumerate(c):
+                # Calculate all 14 shape functions at point z
+                N = [
+                    (L - z)/L,                          # N1
+                    (L**3 - 3*L*z**2 + 2*z**3)/L**3,    # N2
+                    (L**3 - 3*L*z**2 + 2*z**3)/L**3,    # N3
+                    (L**3 - 3*L*z**2 + 2*z**3)/L**3,    # N4
+                    -z + 2*z**2/L - z**3/L**2,          # N5
+                    z - 2*z**2/L + z**3/L**2,           # N6
+                    z - 2*z**2/L + z**3/L**2,           # N7
+                    z/L,                                # N8
+                    z**2*(3*L - 2*z)/L**3,              # N9
+                    z**2*(3*L - 2*z)/L**3,              # N10
+                    z**2*(3*L - 2*z)/L**3,              # N11
+                    z**2*(L - z)/L**2,                  # N12
+                    z**2*(-L + z)/L**2,                 # N13
+                    z**2*(-L + z)/L**2                  # N14
+                ]
+
+                u_prime1, u_prime2 = theta_y1, theta_y2
+                v_prime1, v_prime2 = theta_x1, theta_x2
+                # theta1, theta2, theta_prime1, theta_prime2 = theta_z1, theta_z2, phi1, phi2
+                
+                # Axial deflection (w)
+                deflection[i, 0] = N[0]*w1 + N[7]*w2
+
+                # Transverse deflection in x-direction (ū)
+                deflection[i, 1] = N[1]*u1 + N[5]*u_prime1 + N[8]*u2 + N[12]*u_prime2
+
+                # Transverse deflection in y-direction (v̄)
+                deflection[i, 2] = N[2]*v1 + N[4]*v_prime1 + N[9]*v2 + N[11]*v_prime2
         
         return c, deflection

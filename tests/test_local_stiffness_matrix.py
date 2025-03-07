@@ -3,19 +3,18 @@ from pybeamnlfea.utils.stiffness_matrix import thin_wall_stiffness_matrix
 # Author: James Whiteley (github.com/jamesalexwhiteley)
 
 if __name__ == "__main__":
-    # Example parameters
-    E = 210e9      # Young's modulus (Pa)
-    G = 80e9       # Shear modulus (Pa)
-    A = 0.01       # Cross-sectional area (m2)
-    Ix = 1e-4      # Second moment of area about x-axis (m4)
-    Iy = 2e-4      # Second moment of area about y-axis (m4)
-    Iw = 1e-6      # Warping constant (m6)
-    J = 5e-5       # Torsion constant (m4)
-    L = 2.0        # Element length (m)
+    # Parameters
+    E  = 1      # Young's modulus (N/m)
+    G  = 1      # Shear modulus (N/m)
+    A  = 1      # Cross-sectional area (m2)
+    Ix = 1      # Second moment of area about x-axis (m4)
+    Iy = 1      # Second moment of area about y-axis (m4)
+    Iw = 1      # Warping constant (m6)
+    J  = 1      # Torsion constant (m4)
+    L  = 1      # Element length (m)
 
-    # Create stiffness matrix
+    # Stiffness matrix
     K = thin_wall_stiffness_matrix(E, G, A, Ix, Iy, Iw, J, L)
-
     print("Element stiffness matrix:")
     print(K.todense())
     

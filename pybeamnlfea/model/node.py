@@ -23,30 +23,6 @@ class Node:
         self.dof_count = 7
         if len(self.coords) != 3:
             raise ValueError("Node coordinates must be vector [x, y, z]")
-        
-        # # Initial displacements/rotations/warping are zero
-        # # [w, ū, v̄, θz, -θ̄x, θ̄y, φ]
-        # self.displacements = np.zeros(7)
-        
-        # # For storing applied loads at this node (corresponding to each DOF)
-        # self.applied_loads = np.zeros(7)
-        
-        # # For storing reactions at this node (if it's a support)
-        # self.reactions = np.zeros(7)
-        
-        # # For tracking boundary conditions applied to this node
-        # self.constrained_dofs: Dict[int, float] = {}  # dof_index -> prescribed value
-        
-        # # Dictionary to map DOF indices to their physical meaning
-        # self.dof_names = {
-        #     0: "w",       # translation along local z
-        #     1: "ū",       # translation along local x
-        #     2: "v̄",       # translation along local y
-        #     3: "θz",      # rotation about local z
-        #     4: "-θ̄x",     # negative rotation about local x
-        #     5: "θ̄y",      # rotation about local y
-        #     6: "φ"        # warping (dθz/dz)
-        # }
 
     @property
     def ndof(self) -> float:
@@ -75,12 +51,6 @@ class Node:
     def distance_to(self, other_node: 'Node') -> float:
         """
         Calculate Euclidean distance to another node.
-        
-        Args:
-            other_node: Another Node object
-            
-        Returns:
-            Float: Euclidean distance between the two nodes
         """
         return np.linalg.norm(self.coords - other_node.coords)
     
