@@ -7,8 +7,7 @@ class Results:
         """
         Results class to store and process solution results.
         
-        Parameters
-        ----------
+        Args:
             assembler: The assembler used to build the system
             global_displacements: Dictionary mapping (node_id, dof_idx) to displacement values in global coords
             element_forces: Dictionary of element forces and local displacements
@@ -88,47 +87,47 @@ class Results:
         
         # Create points along element length
         c = np.linspace(0, L, num_points)
-        deflection = np.zeros((num_points, 6))  # For 6 deflection components (w, u, v, θz, θx, θy)
+        deflection = np.zeros((num_points, 6))  # For 6 deflection components (ux, uy, uz, θx, θy, θz)
         
         if len(element.nodes) == 2 and len(local_disps) == 14:
             # First node 
-            w1, u1, v1 = local_disps[0], local_disps[1], local_disps[2]  # Translations 
-            theta_z1, theta_x1, theta_y1, phi1 = local_disps[3], local_disps[4], local_disps[5], local_disps[6]  # Rotations
+            ux1, uy1, uz1 = local_disps[0], local_disps[1], local_disps[2]  # Translations 
+            theta_x1, theta_y1, theta_z1, phi_x1 = local_disps[3], local_disps[4], local_disps[5], local_disps[6]  # Rotations
             
             # Second node 
-            w2, u2, v2 = local_disps[7], local_disps[8], local_disps[9]  # Translations 
-            theta_z2, theta_x2, theta_y2, phi2 = local_disps[10], local_disps[11], local_disps[12], local_disps[13]  # Rotations
+            ux2, uy2, uz2 = local_disps[7], local_disps[8], local_disps[9]  # Translations 
+            theta_x2, theta_y2, theta_z2, phi_x2 = local_disps[10], local_disps[11], local_disps[12], local_disps[13]  # Rotations
             
-            for i, z in enumerate(c):
-                # Calculate all 14 shape functions at point z
+            for i, x in enumerate(c):
+                # Calculate all 14 shape functions at point x
                 N = [
-                    (L - z)/L,                          # N1
-                    (L**3 - 3*L*z**2 + 2*z**3)/L**3,    # N2
-                    (L**3 - 3*L*z**2 + 2*z**3)/L**3,    # N3
-                    (L**3 - 3*L*z**2 + 2*z**3)/L**3,    # N4
-                    -z + 2*z**2/L - z**3/L**2,          # N5
-                    z - 2*z**2/L + z**3/L**2,           # N6
-                    z - 2*z**2/L + z**3/L**2,           # N7
-                    z/L,                                # N8
-                    z**2*(3*L - 2*z)/L**3,              # N9
-                    z**2*(3*L - 2*z)/L**3,              # N10
-                    z**2*(3*L - 2*z)/L**3,              # N11
-                    z**2*(L - z)/L**2,                  # N12
-                    z**2*(-L + z)/L**2,                 # N13
-                    z**2*(-L + z)/L**2                  # N14
+                    (L - x)/L,                          # N1
+                    (L**3 - 3*L*x**2 + 2*x**3)/L**3,    # N2
+                    (L**3 - 3*L*x**2 + 2*x**3)/L**3,    # N3
+                    (L**3 - 3*L*x**2 + 2*x**3)/L**3,    # N4
+                    -x + 2*x**2/L - x**3/L**2,          # N5
+                    x - 2*x**2/L + x**3/L**2,           # N6
+                    x - 2*x**2/L + x**3/L**2,           # N7
+                    x/L,                                # N8
+                    x**2*(3*L - 2*x)/L**3,              # N9
+                    x**2*(3*L - 2*x)/L**3,              # N10
+                    x**2*(3*L - 2*x)/L**3,              # N11
+                    x**2*(L - x)/L**2,                  # N12
+                    x**2*(-L + x)/L**2,                 # N13
+                    x**2*(-L + x)/L**2                  # N14
                 ]
 
-                u_prime1, u_prime2 = theta_y1, theta_y2
-                v_prime1, v_prime2 = theta_x1, theta_x2
-                # theta1, theta2, theta_prime1, theta_prime2 = theta_z1, theta_z2, phi1, phi2
+                uy_prime1, uy_prime2 = theta_z1, theta_z2
+                uz_prime1, uz_prime2 = theta_y1, theta_y2
+                # theta1, theta2, theta_prime1, theta_prime2 = theta_x1, theta_x2, phi_x1, phi_x2
                 
-                # Axial deflection (w)
-                deflection[i, 0] = N[0]*w1 + N[7]*w2
+                # Axial deflection (ux)
+                deflection[i, 0] = N[0]*ux1 + N[7]*ux2
 
-                # Transverse deflection in x-direction (ū)
-                deflection[i, 1] = N[1]*u1 + N[5]*u_prime1 + N[8]*u2 + N[12]*u_prime2
+                # Transverse deflection in y-direction (uȳ)
+                deflection[i, 1] = N[1]*uy1 + N[5]*uy_prime1 + N[8]*uy2 + N[12]*uy_prime2
 
-                # Transverse deflection in y-direction (v̄)
-                deflection[i, 2] = N[2]*v1 + N[4]*v_prime1 + N[9]*v2 + N[11]*v_prime2
+                # Transverse deflection in z-direction (uz̄)
+                deflection[i, 2] = N[2]*uz1 + N[4]*uz_prime1 + N[9]*uz2 + N[11]*uz_prime2
         
         return c, deflection

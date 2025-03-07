@@ -11,10 +11,9 @@ class Material:
         """
         Initialise a generic material.
         
-        Parameters
-        ----------
-        **kwargs : dict
-            Material properties
+        Args:
+            **kwargs : dict
+                Material properties
         """
         # Store additional properties
         for key, value in kwargs.items():
@@ -26,16 +25,15 @@ class LinearElastic(Material):
     """
     def __init__(self, E: float, nu: float = None, G: float = None, **kwargs):
         """        
-        Parameters
-        ----------
-        E : float
-            Young's modulus 
-        nu : float
-            Poisson's ratio 
-        G : float
-            Shear modulus 
-        **kwargs : dict
-            Additional material properties
+        Args: 
+            E : float
+                Young's modulus 
+            nu : float
+                Poisson's ratio 
+            G : float
+                Shear modulus 
+            **kwargs : dict
+                Additional material properties
         """
         super().__init__(**kwargs)
         self.E = E

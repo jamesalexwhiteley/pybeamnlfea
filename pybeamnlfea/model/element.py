@@ -33,39 +33,80 @@ class ThinWalledBeamElement(Element):
     def _initialise_local_axes(self):
         """
         Compute local coordinate system
-            - local z axis is along the member direction
-            - local x and y axes are derived from projections of global x and y
+            - local x axis is along the member direction
+            - local y and z axes are derived from projections of global y and z
         """
-        # Compute local z axis along member direction
-        c = self.nodes[1].coords - self.nodes[0].coords
-        c = c / np.linalg.norm(c)
+        # # Compute local x axis along member direction
+        # a = self.nodes[1].coords - self.nodes[0].coords
+        # a = a / np.linalg.norm(a)
         
-        # Global x axis
-        global_x = np.array([1.0, 0.0, 0.0])
+        # # Global z axis
+        # global_z = np.array([0.0, 0.0, 1.0])
         
-        if np.abs(np.dot(c, global_x)) > 0.95:
-            # If nearly parallel to global x, use global y instead
-            ref_vector = np.array([0.0, 1.0, 0.0])
-        else:
-            ref_vector = global_x
+        # if np.abs(np.dot(a, global_z)) > 0.95:
+        #     # If nearly parallel to global z, use global y instead
+        #     ref_vector = np.array([0.0, 1.0, 0.0])
+        # else:
+        #     ref_vector = global_z
         
-        # Compute local y axis perpendicular to local z
-        b = np.cross(c, ref_vector) 
-        b = b / np.linalg.norm(b)
+        # # Compute local z axis perpendicular to local x
+        # c = np.cross(a, ref_vector) 
+        # c = c / np.linalg.norm(c)
         
-        # Compute local x axis to complete right-handed system
-        a = np.cross(b, c) 
-        a = a / np.linalg.norm(a)
+        # # Compute local y axis to complete right-handed system
+        # b = np.cross(c, a) 
+        # b = b / np.linalg.norm(b)
 
-        self.R = np.vstack((a, b, c))
+        # self.R = np.vstack((a, b, c))
+
+
+
+        a = self.nodes[1].coords - self.nodes[0].coords
+        x_local = a / np.linalg.norm(a)
+
+        # x1, y1, z1 = self.nodes[n1]
+        # x2, y2, z2 = self.nodes[n2]
+        # dx, dy, dz = (x2 - x1), (y2 - y1), (z2 - z1)
+
+        # L = np.sqrt(dx*dx + dy*dy + dz*dz)
+        # if L < 1e-14:
+        #     return np.eye(3)
+
+        # # local x-axis
+        # x_local = np.array([dx, dy, dz]) / L
+
+        # "reference up" vector
+        ref_up = np.array([0, 0, 1], dtype=float)
+
+        # try cross(x_local, ref_up)
+        y_l_temp = np.cross(x_local, ref_up)
+        nrm = np.linalg.norm(y_l_temp)
+        if nrm < 1e-12:
+            # fallback
+            ref_up = np.array([0, 1, 0], dtype=float)
+            y_l_temp = np.cross(x_local, ref_up)
+            nrm = np.linalg.norm(y_l_temp)
+            if nrm < 1e-12:
+                return np.eye(3)
+
+        y_l_temp /= nrm
+        # now z_l = x_l x y_l
+        z_local = np.cross(x_local, y_l_temp)
+        z_local /= np.linalg.norm(z_local)
+        # refine y_l to ensure orthogonality
+        y_local = np.cross(z_local, x_local)
+        y_local /= np.linalg.norm(y_local)
+
+        R = np.vstack([x_local, y_local, z_local])
+        self.R = R
 
     def compute_local_stiffness_matrix(self):
         """Compute local stiffness matrix."""
 
         # elastic stiffness components 
         A = self.section.A
-        Ix = self.section.Ix
         Iy = self.section.Iy
+        Iz = self.section.Iz
         J = self.section.J
         Iw = self.section.Iw
         
@@ -77,21 +118,21 @@ class ThinWalledBeamElement(Element):
 
         # geoemtric stiffness components 
         P0=0
-        Mx0=0
         My0=0
+        Mz0=0
         B0_bar=0
 
         W_bar=0
-        x0=0
         y0=0
-        beta_x=0
+        z0=0
         beta_y=0
+        beta_z=0
         r=0
         
-        self.k = thin_wall_stiffness_matrix(E, G, A, Ix, Iy, Iw, J, L, 
-                                            P0, Mx0, My0, B0_bar, 
-                                            W_bar, x0, y0, beta_x, beta_y, r)
-        
+        self.k = thin_wall_stiffness_matrix(E, G, A, Iy, Iz, Iw, J, L, 
+                                            P0, My0, Mz0, B0_bar, 
+                                            W_bar, y0, z0, beta_y, beta_z, r)
+
         return self.k
     
     def get_local_to_global_transformation_matrix(self):
@@ -114,19 +155,19 @@ class ThinWalledBeamElement(Element):
         C = np.eye(14)  
         
         # Offset between shear center and centroid
-        x0 = self.section.x0  
         y0 = self.section.y0  
+        z0 = self.section.z0  
         
         # Non-zero off-diagonal terms 
-        C[2, 3] = x0 
-        C[4, 6] = x0 
-        C[9, 10] = x0 
-        C[11, 13] = x0  
-        
-        C[1, 3] = y0 
-        C[5, 6] = y0  
-        C[8, 10] = y0  
+        C[2, 3] = y0 
+        C[5, 6] = y0 
+        C[9, 10] = y0 
         C[12, 13] = y0  
+        
+        C[1, 3] = z0 
+        C[4, 6] = z0  
+        C[8, 10] = z0  
+        C[11, 13] = z0  
         
         return C
 

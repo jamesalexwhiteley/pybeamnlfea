@@ -13,34 +13,33 @@ class ThinWalledFrame3D:
         """
         3D FEM model of a thin-walled frame with warping effects.
 
-        Parameters
-        ----------
-        nodes : np.array(
-                    [[x1, y1, z1], 
-                     [x2, y2, z2], 
-                    ... 
-        elements : np.array( 
-                    [[0, 1], 
-                     [1, 2], 
-                     ...
-        E : float or array
-            Young's modulus
-        G : float or array
-            Shear modulus
-        A : float or array
-            Cross-sectional area
-        Iy : float or array
-            Second moment of area about y axis
-        Iz : float or array
-            Second moment of area about z axis
-        J : float or array
-            Torsion constant
-        Iw : float or array
-            Warping constant
-        x0, y0 : float or array, optional
-            Coordinates of shear center relative to centroid
-        r : float or array, optional
-            Polar radius of gyration
+        Args:
+            nodes : np.array(
+                        [[x1, y1, z1], 
+                        [x2, y2, z2], 
+                        ... 
+            elements : np.array( 
+                        [[0, 1], 
+                        [1, 2], 
+                        ...
+            E : float or array
+                Young's modulus
+            G : float or array
+                Shear modulus
+            A : float or array
+                Cross-sectional area
+            Iy : float or array
+                Second moment of area about y axis
+            Iz : float or array
+                Second moment of area about z axis
+            J : float or array
+                Torsion constant
+            Iw : float or array
+                Warping constant
+            x0, y0 : float or array, optional
+                Coordinates of shear center relative to centroid
+            r : float or array, optional
+                Polar radius of gyration
         """
         self.nodes = nodes
         self.elems = elems
@@ -190,7 +189,7 @@ class ThinWalledFrame3D:
         
         set_symmetric(5, 13, L*Mx0/60 - L*P0*y0/60)
         set_symmetric(6, 12, L*Mx0/60 - L*P0*y0/60)
-        
+
         return k
 
     def element_rotation_matrix(self, n1, n2):
@@ -290,6 +289,11 @@ class ThinWalledFrame3D:
                 x0=x0, y0=y0, r=r
             )
 
+            for i in range(k_loc.shape[0]):
+                for j in range(k_loc.shape[1]):
+                    if k_loc[i, j] > 0: 
+                        print(f"{i, j}  {k_loc[i, j]}") 
+
             # rotation matrix
             R = self.element_rotation_matrix(n1, n2)
 
@@ -306,11 +310,11 @@ class ThinWalledFrame3D:
                 for j in range(14):
                     self.K[dof[i], dof[j]] += k_g[i, j]
 
-        # add any boundary springs
-        for sup in self.dof_stiff:
-            dof_id = sup['dof']
-            k_spring = sup['stiffness']
-            self.K[dof_id, dof_id] += k_spring
+        # # add any boundary springs
+        # for sup in self.dof_stiff:
+        #     dof_id = sup['dof']
+        #     k_spring = sup['stiffness']
+        #     self.K[dof_id, dof_id] += k_spring
 
     def solve(self):
         """
@@ -357,13 +361,13 @@ class ThinWalledFrame3D:
         """
         Shape functions for thin-walled beam with warping.
 
-        Parameters:
-        xi: Normalized position along beam (0 to 1)
-        L: Element length
-        dof_loc: Local DOFs [u1, v1, w1, rx1, ry1, rz1, φ1, u2, v2, w2, rx2, ry2, rz2, φ2]
+        Args:
+            xi: Normalized position along beam (0 to 1)
+            L: Element length
+            dof_loc: Local DOFs [u1, v1, w1, rx1, ry1, rz1, φ1, u2, v2, w2, rx2, ry2, rz2, φ2]
         
         Returns:
-        (u_xl, v_yl, w_zl, rx_xl, phi): Interpolated displacements, rotations, and warping
+            (u_xl, v_yl, w_zl, rx_xl, phi): Interpolated displacements, rotations, and warping
         """
         # Extract local DOFs
         (u1, v1, w1, rx1, ry1, rz1, phi1,
@@ -398,7 +402,7 @@ class ThinWalledFrame3D:
         """
         Plot the deformed shape of the structure
         
-        Parameters:
+        Args:
         scale: Scale factor for the deformation
         npoints: Number of points to use for interpolation along each element
         figsize: Figure size
@@ -488,10 +492,10 @@ class ThinWalledFrame3D:
         """
         Add a point load at a specific node.
         
-        Parameters:
-        node_id: Node index
-        direction: Direction index (0-6 for u, v, w, θx, θy, θz, φ)
-        magnitude: Load magnitude
+        Args:
+            node_id: Node index
+            direction: Direction index (0-6 for u, v, w, θx, θy, θz, φ)
+            magnitude: Load magnitude
         """
         dof_id = self.ndof * node_id + direction
         self.f[dof_id] += magnitude
@@ -500,10 +504,10 @@ class ThinWalledFrame3D:
         """
         Add a prescribed displacement boundary condition.
         
-        Parameters:
-        node_id: Node index
-        direction: Direction index (0-6 for u, v, w, θx, θy, θz, φ)
-        value: Prescribed displacement value
+        Args:
+            node_id: Node index
+            direction: Direction index (0-6 for u, v, w, θx, θy, θz, φ)
+            value: Prescribed displacement value
         """
         dof_id = self.ndof * node_id + direction
         
@@ -520,7 +524,7 @@ class ThinWalledFrame3D:
         """
         Add an elastic support (spring) at a node.
         
-        Parameters:
+        Args:
         node_id: Node index
         direction: Direction index (0-6 for u, v, w, θx, θy, θz, φ)
         stiffness: Spring stiffness
@@ -535,7 +539,7 @@ class ThinWalledFrame3D:
     #     """
     #     Fix a node in specified directions.
         
-    #     Parameters:
+    #     Args:
     #     node_id: Node index
     #     directions: List of direction indices to fix (default: all)
     #     """
@@ -553,26 +557,18 @@ class Frame3D(ThinWalledFrame3D):
         """
         Frame object. Input node xyz locations and element connectivity array. 
 
-        Parameters
-        ----------
-        nodes : np.array(
-                    [[x1, y1, z1], 
-                     [x2, y2, z2], 
-                    ... 
-        elements : np.array( 
-                    [[0, 1], 
-                     [1, 2], 
-                     ...
+        Args: 
+            nodes : np.array(
+                        [[x1, y1, z1], 
+                        [x2, y2, z2], 
+                        ... 
+            elements : np.array( 
+                        [[0, 1], 
+                        [1, 2], 
+                        ...
 
         """
         nelems = elems.shape[0]
-
-        # E = np.full(nelems, 210e9)  
-        # G = np.full(nelems, 80e9)   
-        # A = np.full(nelems, 0.01)   
-        # Iy = np.full(nelems, 1e-5)  
-        # Iz = np.full(nelems, 2e-5)  
-        # J = np.full(nelems, 1e-5)   
 
         E = np.full(nelems, 1)  
         G = np.full(nelems, 1)   
@@ -584,7 +580,7 @@ class Frame3D(ThinWalledFrame3D):
 
         frame = ThinWalledFrame3D(nodes, elems, E, G, A, Iy, Iz, J, Iw)
 
-        dof_constrained = np.array([0,1,2,3,4,5], dtype=int) 
+        dof_constrained = np.array([0,1,2,3,4,5,6], dtype=int) 
 
         # dof_constrained = np.array([0,1,2,3,4,5,
         #                             7,8,9,10,11,12,
@@ -597,11 +593,11 @@ class Frame3D(ThinWalledFrame3D):
         #                             18,19,20], dtype=int) 
 
         frame.dof_con = dof_constrained
-        frame.dof_free = np.setdiff1d(np.arange(frame.nnodes*frame.ndof), frame.dof_con)
-        node2_dof_z = 7*19 + 2 
-        frame.f[node2_dof_z] = -1
-        # node2_dof_z = 7*1 + 2 
-        # frame.f[node2_dof_z] = -1
+        frame.dof_free = np.setdiff1d(np.arange(frame.nnodes*frame.ndof), frame.dof_con) 
+        frame.f[7*1 + 1] = -1 
+        # frame.f[7*19 + 2] = -1 
+        # frame.f[7*19 : 8*19] = 1  
+        # frame.f[7*1 + 2] = -1
 
         frame.solve()
         frame.plot_deformed_shape(scale=1.0, npoints=30)
@@ -609,50 +605,26 @@ class Frame3D(ThinWalledFrame3D):
 
 if __name__ == "__main__":
 
-    # nodes = np.array([
-    #     [0.0, 0.0, 0.0],
-    #     [5.0, 0.0, 0.0],
-    #     [5.0, 5.0, 0.0],
-    #     [0.0, 5.0, 0.0],
-    #     [2.5, 2.5, 0.0]
-    # ])
+    nodes = np.array([
+        [0.0, 0.0, 0.0],
+        [0.0, 0.0, 1.0],
+    ])
 
-    # elems = np.array([
-    #     [0, 1],
-    #     [1, 2],
-    #     [2, 3],
-    #     [0, 3],
-    #     [0, 4],
-    #     [1, 4],
-    #     [2, 4],
-    #     [3, 4]
-    # ])
+    elems = np.array([
+        [0, 1],
+    ])
 
-    # Frame3D(nodes, elems)
+    # # Create nodes 
+    # num_nodes = 3
+    # theta = np.linspace(0, np.pi/2, num_nodes)
+    # radius = 1.0
+    # nodes = np.zeros((num_nodes, 3))
+    # nodes[:, 0] = radius * np.cos(theta) 
+    # nodes[:, 1] = radius * np.sin(theta)  
 
-    # nodes = np.array([
-    #     [0.0, 0.0, 0.0],
-    #     [1.0, 0.0, 0.0],
-    # ])
-
-    # elems = np.array([
-    #     [0, 1],
-    # ])
-
-    # Create 20 nodes along a quarter circle in the x-y plane
-    num_nodes = 20
-    theta = np.linspace(0, np.pi/2, num_nodes)  # Quarter circle from 0 to 90 degrees
-    radius = 1.0
-
-    # Calculate node coordinates
-    nodes = np.zeros((num_nodes, 3))
-    nodes[:, 0] = radius * np.cos(theta)  # x-coordinates
-    nodes[:, 1] = radius * np.sin(theta)  # y-coordinates
-    # z-coordinates remain 0 (in x-y plane)
-
-    # Create elements connecting adjacent nodes
-    elems = np.zeros((num_nodes-1, 2), dtype=int)
-    for i in range(num_nodes-1):
-        elems[i] = [i, i+1]
+    # # Create elements 
+    # elems = np.zeros((num_nodes-1, 2), dtype=int)
+    # for i in range(num_nodes-1):
+    #     elems[i] = [i, i+1]
 
     Frame3D(nodes, elems)

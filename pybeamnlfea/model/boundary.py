@@ -8,10 +8,10 @@ class BoundaryCondition:
     def __init__(self, node_id: int, dof_constraints: List[bool]):
         """
         Initialise a boundary condition.
-        
+
         Args:
             node_id: node tag  
-            dof_constraints: [w, ū, v̄, θz, -θ̄x, θ̄y, φ] where 0 indicates fixed
+            dof_constraints: [ux, uy, uz, θx, θy, θz, φ] where 0 indicates fixed
 
         """
         self.node_id = node_id 

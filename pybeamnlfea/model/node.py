@@ -6,9 +6,9 @@ from typing import List, Dict, Optional, Union, Tuple
 class Node:
     """
     Node class.
-    - 3 translational DOFs (w, ū, v̄) displacements in local system
-    - 3 rotational DOFs (θz, -θ̄x, θ̄y) rotations about local system
-    - 1 warping DOF (φ = dθz/dz) cross section warping
+    - 3 translational DOFs (ux, uȳ, uz̄) displacements in local system
+    - 3 rotational DOFs (θx, θȳ, θz̄) rotations about local system
+    - 1 warping DOF (φx = dθx/dx) cross section warping
     """
     def __init__(self, id: int, coords: np.ndarray):
         """

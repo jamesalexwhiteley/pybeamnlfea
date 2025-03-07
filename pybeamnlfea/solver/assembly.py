@@ -84,6 +84,7 @@ class Assembler:
         for element_id, element in self.frame.elements.items():
             # Get element stiffness matrix in local coordinates
             k_local = element.compute_local_stiffness_matrix()
+            print(k_local)
             
             # Transform to global coordinates
             T = element.compute_transformation_matrix()
@@ -124,7 +125,7 @@ class Assembler:
                 force_vector = load.force_vector
                 
                 # Map each component of the force vector to the global DOF
-                for local_dof in range(self.frame.nodes[node_id].ndof): # [Fz, Fx, Fy, Mz, Mx, My, Bz]
+                for local_dof in range(self.frame.nodes[node_id].ndof): # [Fx, Fy, Fz, Mx, My, Mz, Bx]
                     global_dof = self.dof_map.get((node_id, local_dof), -1)
                     
                     # Only add force if DOF is not constrained

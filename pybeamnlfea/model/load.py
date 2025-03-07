@@ -16,7 +16,7 @@ class NodalLoad(Load):
         
         Args:
             node_id: node tag 
-            force_vector: array of 7 values [Fz, Fx, Fy, Mz, Mx, My, Bz] 
+            force_vector: array of 7 values [Fx, Fy, Fz, Mx, My, Mz, Bx] 
         """
         super().__init__(node_id)
         if len(force_vector) != 7:

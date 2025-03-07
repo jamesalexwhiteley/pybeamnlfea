@@ -53,7 +53,7 @@ class Visualiser:
         ax.legend(handles=legend_elements, loc='best')
 
         # Set equal aspect ratio for all axes
-        ax.set_box_aspect([1, 1, 1/3]) 
+        ax.set_box_aspect([1, 1, 1]) 
 
         # Remove background
         ax.xaxis.pane.fill = False
@@ -80,11 +80,11 @@ class Visualiser:
             
             if deformed:
                 # Get displacements
-                w = self.results.get_nodal_displacement(node_id, 0) * scale_factor  # w - local z
-                u_bar = self.results.get_nodal_displacement(node_id, 1) * scale_factor  # ū - local x
-                v_bar = self.results.get_nodal_displacement(node_id, 2) * scale_factor  # v̄ - local y
+                ux = self.results.get_nodal_displacement(node_id, 0) * scale_factor  # ux - local x
+                uy_bar = self.results.get_nodal_displacement(node_id, 1) * scale_factor  # uȳ - local y
+                uz_bar = self.results.get_nodal_displacement(node_id, 2) * scale_factor  # uz̄ - local z
     
-                deformed_coords = original_coords + np.array([u_bar, v_bar, w])
+                deformed_coords = original_coords + np.array([ux, uy_bar, uz_bar])
                 
                 node_coords[node_id] = deformed_coords
             else:
@@ -140,11 +140,11 @@ class Visualiser:
                 # Base point along undeformed element
                 base_point = start_pos + xi * element_dir
                 
-                # Local displacement vector (u, v, w) at this point
+                # Local displacement vector (uy, uz, ux) at this point
                 local_disp = np.array([
-                    deflection[i, 1],  # u (local x)
-                    deflection[i, 2],  # v (local y)
-                    deflection[i, 0]   # w (local z)
+                    deflection[i, 0],  # ux (local x)
+                    deflection[i, 1],  # uy (local y)
+                    deflection[i, 2]   # uz (local z)
                 ])
                 
                 # Transform local displacement to global coordinates
@@ -159,4 +159,3 @@ class Visualiser:
             # Plot the curved element
             ax.plot(global_points[:, 0], global_points[:, 1], global_points[:, 2], 
                     linewidth=2, color=color, alpha=alpha)
-                
