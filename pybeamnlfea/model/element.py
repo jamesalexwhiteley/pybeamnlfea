@@ -36,44 +36,9 @@ class ThinWalledBeamElement(Element):
             - local x axis is along the member direction
             - local y and z axes are derived from projections of global y and z
         """
-        # # Compute local x axis along member direction
-        # a = self.nodes[1].coords - self.nodes[0].coords
-        # a = a / np.linalg.norm(a)
-        
-        # # Global z axis
-        # global_z = np.array([0.0, 0.0, 1.0])
-        
-        # if np.abs(np.dot(a, global_z)) > 0.95:
-        #     # If nearly parallel to global z, use global y instead
-        #     ref_vector = np.array([0.0, 1.0, 0.0])
-        # else:
-        #     ref_vector = global_z
-        
-        # # Compute local z axis perpendicular to local x
-        # c = np.cross(a, ref_vector) 
-        # c = c / np.linalg.norm(c)
-        
-        # # Compute local y axis to complete right-handed system
-        # b = np.cross(c, a) 
-        # b = b / np.linalg.norm(b)
-
-        # self.R = np.vstack((a, b, c))
-
-
 
         a = self.nodes[1].coords - self.nodes[0].coords
         x_local = a / np.linalg.norm(a)
-
-        # x1, y1, z1 = self.nodes[n1]
-        # x2, y2, z2 = self.nodes[n2]
-        # dx, dy, dz = (x2 - x1), (y2 - y1), (z2 - z1)
-
-        # L = np.sqrt(dx*dx + dy*dy + dz*dz)
-        # if L < 1e-14:
-        #     return np.eye(3)
-
-        # # local x-axis
-        # x_local = np.array([dx, dy, dz]) / L
 
         # "reference up" vector
         ref_up = np.array([0, 0, 1], dtype=float)
@@ -97,8 +62,7 @@ class ThinWalledBeamElement(Element):
         y_local = np.cross(z_local, x_local)
         y_local /= np.linalg.norm(y_local)
 
-        R = np.vstack([x_local, y_local, z_local])
-        self.R = R
+        self.R = np.vstack([x_local, y_local, z_local])
 
     def compute_local_stiffness_matrix(self):
         """Compute local stiffness matrix."""
@@ -175,8 +139,9 @@ class ThinWalledBeamElement(Element):
         """
         Compute the transformation matrix T = (CQC^-1)^-1 
         """
-        C = self.get_controid_transformation_matrix()
-        Q = self.get_local_to_global_transformation_matrix()
-        self.T = np.linalg.inv(C @ Q @ np.linalg.inv(C))                                  
+        # C = self.get_controid_transformation_matrix()
+        # Q = self.get_local_to_global_transformation_matrix()
+        # self.T = np.linalg.inv(C @ Q @ np.linalg.inv(C))   
+        self.T = self.get_local_to_global_transformation_matrix()                       # NOTE                  
  
         return self.T
