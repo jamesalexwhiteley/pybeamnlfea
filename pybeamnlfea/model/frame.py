@@ -130,7 +130,7 @@ class Frame:
         # Store results in the frame 
         self.results = results
     
-    def show(self, scale=1.0, show_undeformed=True):
+    def show(self, scale: float=1.0, show_undeformed: bool=True) -> None:
         """
         Plot the deformed shape of the frame.
         
