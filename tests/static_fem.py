@@ -289,11 +289,6 @@ class ThinWalledFrame3D:
                 x0=x0, y0=y0, r=r
             )
 
-            for i in range(k_loc.shape[0]):
-                for j in range(k_loc.shape[1]):
-                    if k_loc[i, j] > 0: 
-                        print(f"{i, j}  {k_loc[i, j]}") 
-
             # rotation matrix
             R = self.element_rotation_matrix(n1, n2)
 
@@ -304,6 +299,11 @@ class ThinWalledFrame3D:
             dof = np.zeros(14, dtype=int)
             dof[0:7] = self.ndof*n1 + np.arange(7)
             dof[7:14] = self.ndof*n2 + np.arange(7)
+
+            # for i in range(k_g.shape[0]):
+            #     for j in range(k_g.shape[1]):
+            #         if abs(k_g[i, j]) > 1e-10: 
+            #             print(f"{i, j}  {k_g[i, j]}")
 
             # add to global stiffness matrix
             for i in range(14):
@@ -329,6 +329,12 @@ class ThinWalledFrame3D:
         # solve
         af = np.linalg.solve(Kf, ff)
         self.a[self.dof_free] = af
+        print(af)
+
+        # for i in range(Kf.shape[0]):
+        #     for j in range(Kf.shape[1]):
+        #         if abs(Kf[i, j]) > 1e-10: 
+        #             print(f"{i, j}  {Kf[i, j]}")
 
         # compute reactions
         if len(self.dof_con) > 0:
@@ -488,69 +494,52 @@ class ThinWalledFrame3D:
         plt.tight_layout()
         plt.show()
 
-    def add_point_load(self, node_id, direction, magnitude):
-        """
-        Add a point load at a specific node.
-        
-        Args:
-            node_id: Node index
-            direction: Direction index (0-6 for u, v, w, θx, θy, θz, φ)
-            magnitude: Load magnitude
-        """
-        dof_id = self.ndof * node_id + direction
-        self.f[dof_id] += magnitude
-
-    def add_point_displacement(self, node_id, direction, value):
-        """
-        Add a prescribed displacement boundary condition.
-        
-        Args:
-            node_id: Node index
-            direction: Direction index (0-6 for u, v, w, θx, θy, θz, φ)
-            value: Prescribed displacement value
-        """
-        dof_id = self.ndof * node_id + direction
-        
-        # Add to constrained DOFs if not already there
-        if dof_id not in self.dof_con:
-            self.dof_con = np.append(self.dof_con, dof_id)
-            # Update free DOFs
-            self.dof_free = np.setdiff1d(np.arange(self.nnodes*self.ndof), self.dof_con)
-        
-        # Set the prescribed value
-        self.a[dof_id] = value
-
-    def add_elastic_support(self, node_id, direction, stiffness):
-        """
-        Add an elastic support (spring) at a node.
-        
-        Args:
-        node_id: Node index
-        direction: Direction index (0-6 for u, v, w, θx, θy, θz, φ)
-        stiffness: Spring stiffness
-        """
-        dof_id = self.ndof * node_id + direction
-        self.dof_stiff.append({
-            'dof': dof_id,
-            'stiffness': stiffness
-        })
-
-    # def fix_node(self, node_id, directions=None):
+    # def add_point_load(self, node_id, direction, magnitude):
     #     """
-    #     Fix a node in specified directions.
+    #     Add a point load at a specific node.
+        
+    #     Args:
+    #         node_id: Node index
+    #         direction: Direction index (0-6 for u, v, w, θx, θy, θz, φ)
+    #         magnitude: Load magnitude
+    #     """
+    #     dof_id = self.ndof * node_id + direction
+    #     self.f[dof_id] += magnitude
+
+    # def add_point_displacement(self, node_id, direction, value):
+    #     """
+    #     Add a prescribed displacement boundary condition.
+        
+    #     Args:
+    #         node_id: Node index
+    #         direction: Direction index (0-6 for u, v, w, θx, θy, θz, φ)
+    #         value: Prescribed displacement value
+    #     """
+    #     dof_id = self.ndof * node_id + direction
+        
+    #     # Add to constrained DOFs if not already there
+    #     if dof_id not in self.dof_con:
+    #         self.dof_con = np.append(self.dof_con, dof_id)
+    #         # Update free DOFs
+    #         self.dof_free = np.setdiff1d(np.arange(self.nnodes*self.ndof), self.dof_con)
+        
+    #     # Set the prescribed value
+    #     self.a[dof_id] = value
+
+    # def add_elastic_support(self, node_id, direction, stiffness):
+    #     """
+    #     Add an elastic support (spring) at a node.
         
     #     Args:
     #     node_id: Node index
-    #     directions: List of direction indices to fix (default: all)
+    #     direction: Direction index (0-6 for u, v, w, θx, θy, θz, φ)
+    #     stiffness: Spring stiffness
     #     """
-    #     if directions is None:
-    #         directions = range(self.ndof)
-            
-    #     for dir_idx in directions:
-    #         dof_id = self.ndof * node_id + dir_idx
-    #         if dof_id not in self.dof_con:
-    #             self.dof_con = np.append(
-
+    #     dof_id = self.ndof * node_id + direction
+    #     self.dof_stiff.append({
+    #         'dof': dof_id,
+    #         'stiffness': stiffness
+    #     })
 
 class Frame3D(ThinWalledFrame3D):   
     def __init__(self, nodes, elems, E=200e9, A=0.1):
@@ -580,7 +569,7 @@ class Frame3D(ThinWalledFrame3D):
 
         frame = ThinWalledFrame3D(nodes, elems, E, G, A, Iy, Iz, J, Iw)
 
-        dof_constrained = np.array([0,1,2,3,4,5,6], dtype=int) 
+        dof_constrained = np.array([0,1,2,3,4,5], dtype=int) 
 
         # dof_constrained = np.array([0,1,2,3,4,5,
         #                             7,8,9,10,11,12,
@@ -594,10 +583,8 @@ class Frame3D(ThinWalledFrame3D):
 
         frame.dof_con = dof_constrained
         frame.dof_free = np.setdiff1d(np.arange(frame.nnodes*frame.ndof), frame.dof_con) 
-        frame.f[7*1 + 1] = -1 
-        # frame.f[7*19 + 2] = -1 
-        # frame.f[7*19 : 8*19] = 1  
-        # frame.f[7*1 + 2] = -1
+        # frame.f[7*1 + 1] = -1 
+        frame.f[7*19 + 2] = -1
 
         frame.solve()
         frame.plot_deformed_shape(scale=1.0, npoints=30)
@@ -605,26 +592,26 @@ class Frame3D(ThinWalledFrame3D):
 
 if __name__ == "__main__":
 
-    nodes = np.array([
-        [0.0, 0.0, 0.0],
-        [0.0, 0.0, 1.0],
-    ])
+    # nodes = np.array([
+    #     [0.0, 0.0, 0.0],
+    #     [0.0, 0.0, 1.0],
+    # ])
 
-    elems = np.array([
-        [0, 1],
-    ])
+    # elems = np.array([
+    #     [0, 1],
+    # ])
 
-    # # Create nodes 
-    # num_nodes = 3
-    # theta = np.linspace(0, np.pi/2, num_nodes)
-    # radius = 1.0
-    # nodes = np.zeros((num_nodes, 3))
-    # nodes[:, 0] = radius * np.cos(theta) 
-    # nodes[:, 1] = radius * np.sin(theta)  
+    # Create nodes 
+    num_nodes = 20
+    theta = np.linspace(0, np.pi/2, num_nodes)
+    radius = 1.0
+    nodes = np.zeros((num_nodes, 3))
+    nodes[:, 0] = radius * np.cos(theta) 
+    nodes[:, 1] = radius * np.sin(theta)  
 
-    # # Create elements 
-    # elems = np.zeros((num_nodes-1, 2), dtype=int)
-    # for i in range(num_nodes-1):
-    #     elems[i] = [i, i+1]
+    # Create elements 
+    elems = np.zeros((num_nodes-1, 2), dtype=int)
+    for i in range(num_nodes-1):
+        elems[i] = [i, i+1]
 
     Frame3D(nodes, elems)
