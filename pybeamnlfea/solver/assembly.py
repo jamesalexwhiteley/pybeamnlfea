@@ -36,7 +36,7 @@ class Assembler:
 
     def assemble_stiffness_matrix(self):
         """Assemble the global stiffness matrix using a direct approach."""
-        # Initialize sparse matrix in COO format 
+        # Initialise sparse matrix in COO format 
         rows, cols, data = [], [], []
         
         # Assemble contributions from each element
@@ -77,7 +77,7 @@ class Assembler:
 
     # def assemble_stiffness_matrix(self):
     #     """Assemble the global stiffness matrix."""
-    #     # Initialize the global stiffness matrix with zeros
+    #     # Initialise the global stiffness matrix with zeros
     #     K = np.zeros((self.total_dofs, self.total_dofs))
         
     #     # Assemble contributions from each element
@@ -114,7 +114,7 @@ class Assembler:
         """
         Assemble the global force vector from loads.
         """
-        # Initialize force vector with zeros for all DOFs
+        # Initialise force vector with zeros for all DOFs
         F = np.zeros(self.total_dofs)
         
         # Add nodal loads to the global force vector

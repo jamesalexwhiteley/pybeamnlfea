@@ -47,7 +47,7 @@ class ThinWalledBeamElement(Element):
         y_l_temp = np.cross(x_local, ref_up)
         nrm = np.linalg.norm(y_l_temp)
         if nrm < 1e-12:
-            # fallback
+            # else
             ref_up = np.array([0, 1, 0], dtype=float)
             y_l_temp = np.cross(x_local, ref_up)
             nrm = np.linalg.norm(y_l_temp)

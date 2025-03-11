@@ -7,9 +7,10 @@ from pybeamnlfea.model.section import Section
 from pybeamnlfea.model.element import Element 
 from pybeamnlfea.model.boundary import BoundaryCondition 
 from pybeamnlfea.model.load import Load 
+
 from pybeamnlfea.solver.assembly import Assembler 
 from pybeamnlfea.solver.linear import LinearSolver 
-from pybeamnlfea.postprocess.results import Results 
+from pybeamnlfea.postprocess.results import Results
 
 # Author: James Whiteley (github.com/jamesalexwhiteley)
 
@@ -114,10 +115,31 @@ class Frame:
         
         self.loads[node_id] = load_class(node_id, forces)
 
-    # def solve(self, solver_type: str ='direct') -> None:
-    #     """Solve the model with a LinearSolver."""
+    def solve(self, solver_type: str='direct') -> None:
+        """
+        Solve the frame model and return results.
+    
+        """
+        assembler = Assembler(self)
         
-    #     assembler = Assembler(self)
-    #     solver = LinearSolver(solver_type)
-    #     displacements, element_forces = solver.solve(assembler)
-    #     return Results(assembler, displacements, element_forces)
+        # Create and run solver
+        solver = LinearSolver(solver_type=solver_type)
+        nodal_displacements = solver.solve(assembler)
+        results = Results(assembler, nodal_displacements)
+        
+        # Store results in the frame 
+        self.results = results
+    
+    def show(self, scale=1.0, show_undeformed=True):
+        """
+        Plot the deformed shape of the frame.
+        
+        """
+        if self.results is None:
+            print("Model has not been solved yet. Solving with default settings...")
+            self.solve()
+        
+        return self.results.plot_deformed_shape(
+            scale=scale, 
+            show_undeformed=show_undeformed
+        )

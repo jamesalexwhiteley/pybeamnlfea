@@ -6,26 +6,13 @@ from pybeamnlfea.model.element import ThinWalledBeamElement
 from pybeamnlfea.model.boundary import BoundaryCondition 
 from pybeamnlfea.model.load import NodalLoad 
 
-from pybeamnlfea.solver.assembly import Assembler 
-from pybeamnlfea.solver.linear import LinearSolver 
-
-from pybeamnlfea.postprocess.visualise import Visualiser
-from pybeamnlfea.postprocess.results import Results
-
 # Author: James Whiteley (github.com/jamesalexwhiteley)
 
 # Create a beam structure 
 beam = Frame() 
 
-# # Add nodes 
-# nelems = 1
-# length = 1 # m 
-# beam.add_nodes([[0, 0, (length / nelems) * i] for i in range(nelems + 1)]) 
-# # beam.add_nodes([[0, (length / nelems) * i, 0] for i in range(nelems + 1)]) 
-# # beam.add_nodes([[(length / nelems) * i, 0, 0] for i in range(nelems + 1)]) 
-
 nelems = 20
-radius = 1 # m 
+radius = 1 
 theta_max = np.pi/2 
 nodes = []
 for i in range(nelems + 1):
@@ -45,22 +32,10 @@ beam.add_elements([[i, i+1] for i in range(nelems)], "material", "section", elem
 # Add boundary conditions and loads
 beam.add_boundary_condition(0, [0, 0, 0, 0, 0, 0, 1], BoundaryCondition) 
 beam.add_nodal_load(nelems, [0, 0, -1, 0, 0, 0, 0], NodalLoad) 
-# beam.add_nodal_load(nelems, [1, 1, 1, 1, 1, 1, 1], NodalLoad) 
 
-assembler = Assembler(beam) 
-solver = LinearSolver(solver_type='direct') 
-node_disp = solver.solve(assembler) 
-results = Results(assembler, node_disp) 
-# visualiser = Visualiser(results) 
-# # visualiser.plot_deformed_shape() 
+# Solve the model
+results = beam.solve() 
 
-# # Solve the model 
-# results = beam.solve() 
+# # Plot the model
+results = beam.show() 
 
-# # Plot the model 
-# results = beam.plot() 
-
-# Option 2: Using the Visualiser
-vis = Visualiser(results)
-vis.plot_deformed_shape(scale_factor=1.0, show_undeformed=True)
-# vis.plot_internal_forces(element_ids=[1, 2, 3], force_type='all')

@@ -66,7 +66,7 @@ class ThinWalledFrame3D:
         else:
             self.r = r if hasattr(r, '__len__') else np.full(self.nelems, r)
 
-        # Initialize system matrices and vectors
+        # Initialise system matrices and vectors
         self.K = np.zeros((self.nnodes * self.ndof, self.nnodes * self.ndof))
         self.f = np.zeros(self.nnodes * self.ndof)
         self.a = np.zeros(self.nnodes * self.ndof)
@@ -84,7 +84,7 @@ class ThinWalledFrame3D:
         Returns a 14x14 stiffness matrix (7 DOFs per node).
         DOF order: [u1, v1, w1, θx1, θy1, θz1, φ1, u2, v2, w2, θx2, θy2, θz2, φ2]
         """
-        # Initialize the stiffness matrix
+        # Initialise the stiffness matrix
         k = np.zeros((14, 14))
         
         # Helper function to set symmetric entries
