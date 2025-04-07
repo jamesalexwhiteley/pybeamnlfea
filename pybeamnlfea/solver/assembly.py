@@ -35,7 +35,7 @@ class Assembler:
         self.total_dofs = current_dof
 
     def assemble_stiffness_matrix(self):
-        """Assemble the global stiffness matrix using a direct approach."""
+        """Assemble the global stiffness matrix for the unconstrained system."""
         # Initialise sparse matrix in COO format 
         rows, cols, data = [], [], []
         
@@ -55,7 +55,7 @@ class Assembler:
                     global_dof = self.dof_map.get((node.id, i), -1)
                     element_dofs.append(global_dof)
 
-            # Simpler approach: Iterate through all DOF pairs and add non-constrained ones
+            # Iterate through all DOF pairs and add non-constrained ones
             for i_local in range(len(element_dofs)):
                 i_global = element_dofs[i_local]
                 if i_global < 0:  # Skip constrained DOFs
@@ -111,9 +111,7 @@ class Assembler:
     #     return csr_matrix(K)
     
     def assemble_force_vector(self):
-        """
-        Assemble the global force vector from loads.
-        """
+        """Assemble the global force vector for the unconstrained system."""
         # Initialise force vector with zeros for all DOFs
         F = np.zeros(self.total_dofs)
         
@@ -132,4 +130,33 @@ class Assembler:
                         F[global_dof] += force_vector[local_dof]
         
         return F
+    
+    def assemble_full_stiffness_matrix(self):
+        """Assemble the full stiffness matrix including constrained DOFs"""
         
+        # Total DOFs 
+        total_dofs = sum(node.ndof for node in self.frame.nodes.values())
+        rows, cols, data = [], [], []
+        
+        # Assemble 
+        for element_id, element in self.frame.elements.items():
+            k_local = element.compute_local_stiffness_matrix()
+            T = element.compute_transformation_matrix()
+            k_elem = T.transpose() @ k_local @ T
+            
+            # Get global DOF indices 
+            element_dofs = []
+            for node in element.nodes:
+                base_index = node.id * node.ndof 
+                for i in range(node.ndof):
+                    element_dofs.append(base_index + i)
+            
+            for i_local, i_global in enumerate(element_dofs):
+                for j_local, j_global in enumerate(element_dofs):
+                    rows.append(i_global)
+                    cols.append(j_global)
+                    data.append(k_elem[i_local, j_local])
+        
+        K_full = coo_matrix((data, (rows, cols)), shape=(total_dofs, total_dofs))
+        return K_full.tocsr()
+            

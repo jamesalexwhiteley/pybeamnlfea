@@ -5,7 +5,7 @@ from mpl_toolkits.mplot3d import Axes3D
 # Author: James Whiteley (github.com/jamesalexwhiteley)
 
 class Results:
-    def __init__(self, assembler, global_displacements):
+    def __init__(self, assembler, global_displacements, global_forces):
         """
         Results class to store and process solution results.
     
@@ -13,6 +13,7 @@ class Results:
         self.assembler = assembler
         self.frame = assembler.frame
         self.global_displacements = global_displacements
+        self.global_forces = global_forces
     
     def extract_local_dofs(self, element, R):
         """
@@ -78,13 +79,14 @@ class Results:
 
         return (u_xl, v_yl, w_zl, rx_xl, phi_xl)
     
-    def plot_deformed_shape(self, scale=1.0, npoints=20, figsize=(10, 8), show_undeformed=True):
+    def plot_deformed_shape(self, scale=1.0, npoints=20, figsize=(10, 8), show_undeformed=True, show_node_id=True):
         """
         Plot the deformed shape of the structure
         
         """
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111, projection='3d')
+        plotted_nodes = set()
         
         for _, element in self.frame.elements.items():
 
@@ -132,6 +134,19 @@ class Results:
             ax.scatter(xyz_def[0, 0], xyz_def[0, 1], xyz_def[0, 2], color='b', s=25)
             ax.scatter(xyz_def[-1, 0], xyz_def[-1, 1], xyz_def[-1, 2], color='b', s=25)
 
+            if show_node_id:
+                # Start node
+                if start_node.id not in plotted_nodes:
+                    ax.text(xyz_def[0, 0], xyz_def[0, 1], xyz_def[0, 2], 
+                            f' {start_node.id}', fontsize=8, ha='left', va='bottom')
+                    plotted_nodes.add(start_node.id)
+                
+                # End node
+                if end_node.id not in plotted_nodes:
+                    ax.text(xyz_def[-1, 0], xyz_def[-1, 1], xyz_def[-1, 2], 
+                            f' {end_node.id}', fontsize=8, ha='left', va='bottom')
+                    plotted_nodes.add(end_node.id)
+
         # Configure the plot
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
@@ -142,7 +157,7 @@ class Results:
         ax.yaxis.pane.fill = False
         ax.zaxis.pane.fill = False
 
-        # Make panes transparent
+        # Make transparent
         ax.xaxis.pane.set_edgecolor('w')
         ax.yaxis.pane.set_edgecolor('w')
         ax.zaxis.pane.set_edgecolor('w')
@@ -173,57 +188,21 @@ class Results:
         else:
             raise ValueError("Local coordinate system not implemented for nodal displacements")
     
-    # def calculate_element_deflection(self, element_id, num_points=100):
-    #     """
-    #     Calculate deflected shape of an element in its local coordinate system
-    #     """
-    #     element = self.frame.elements[element_id]
-    #     L = element.length
-    #     local_disps = self.local_element_displacements[element_id]
+    def get_nodal_forces(self, node_id, dof_idx=None, coordinate_system='global'):
+        """
+        Get forces for a specific node.
         
-    #     # Create points along element length
-    #     c = np.linspace(0, L, num_points)
-    #     deflection = np.zeros((num_points, 6))  # For 6 deflection components (ux, uy, uz, θx, θy, θz)
-        
-    #     if len(element.nodes) == 2 and len(local_disps) == 14:
-    #         # First node 
-    #         ux1, uy1, uz1 = local_disps[0], local_disps[1], local_disps[2]  # Translations 
-    #         theta_x1, theta_y1, theta_z1, phi_x1 = local_disps[3], local_disps[4], local_disps[5], local_disps[6]  # Rotations
-            
-    #         # Second node 
-    #         ux2, uy2, uz2 = local_disps[7], local_disps[8], local_disps[9]  # Translations 
-    #         theta_x2, theta_y2, theta_z2, phi_x2 = local_disps[10], local_disps[11], local_disps[12], local_disps[13]  # Rotations
-            
-    #         for i, x in enumerate(c):
-    #             # Calculate all 14 shape functions at point x
-    #             N = [
-    #                 (L - x)/L,                          # N1
-    #                 (L**3 - 3*L*x**2 + 2*x**3)/L**3,    # N2
-    #                 (L**3 - 3*L*x**2 + 2*x**3)/L**3,    # N3
-    #                 (L**3 - 3*L*x**2 + 2*x**3)/L**3,    # N4
-    #                 -x + 2*x**2/L - x**3/L**2,          # N5
-    #                 x - 2*x**2/L + x**3/L**2,           # N6
-    #                 x - 2*x**2/L + x**3/L**2,           # N7
-    #                 x/L,                                # N8
-    #                 x**2*(3*L - 2*x)/L**3,              # N9
-    #                 x**2*(3*L - 2*x)/L**3,              # N10
-    #                 x**2*(3*L - 2*x)/L**3,              # N11
-    #                 x**2*(L - x)/L**2,                  # N12
-    #                 x**2*(-L + x)/L**2,                 # N13
-    #                 x**2*(-L + x)/L**2                  # N14
-    #             ]
-
-    #             uy_prime1, uy_prime2 = theta_z1, theta_z2
-    #             uz_prime1, uz_prime2 = theta_y1, theta_y2
-    #             # theta1, theta2, theta_prime1, theta_prime2 = theta_x1, theta_x2, phi_x1, phi_x2
-                
-    #             # Axial deflection (ux)
-    #             deflection[i, 0] = N[0]*ux1 + N[7]*ux2
-
-    #             # Transverse deflection in y-direction (uȳ)
-    #             deflection[i, 1] = N[1]*uy1 + N[5]*uy_prime1 + N[8]*uy2 + N[12]*uy_prime2
-
-    #             # Transverse deflection in z-direction (uz̄)
-    #             deflection[i, 2] = N[2]*uz1 + N[4]*uz_prime1 + N[9]*uz2 + N[11]*uz_prime2
-        
-    #     return c, deflection
+        """
+        if coordinate_system == 'global':
+            if dof_idx is not None:
+                return self.global_forces.get((node_id, dof_idx), 0.0)
+            else:
+                # Return all DOFs for this node
+                node_forces = {}
+                for k, v in self.global_forces.items():
+                    if k[0] == node_id:
+                        node_forces[k[1]] = v
+                return node_forces
+        else:
+            raise ValueError("Local coordinate system not implemented for nodal forces")
+    

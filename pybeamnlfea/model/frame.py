@@ -124,11 +124,12 @@ class Frame:
         
         # Create and run solver
         solver = LinearSolver(solver_type=solver_type)
-        nodal_displacements = solver.solve(assembler)
-        results = Results(assembler, nodal_displacements)
+        nodal_displacements, nodal_forces = solver.solve(assembler)
+        results = Results(assembler, nodal_displacements, nodal_forces)
         
         # Store results in the frame 
         self.results = results
+        return results 
     
     def show(self, scale: float=1.0, show_undeformed: bool=True) -> None:
         """
