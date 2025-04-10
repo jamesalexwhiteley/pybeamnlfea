@@ -170,7 +170,7 @@ class Results:
         
         return fig, ax
     
-    def get_nodal_displacement(self, node_id, dof_idx=None, coordinate_system='global'):
+    def get_nodal_displacements(self, node_id, dof_idx=None, coordinate_system='global'):
         """
         Get displacement for a specific node.
         

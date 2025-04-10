@@ -49,7 +49,7 @@ class LinearSolver(Solver):
     
     def solve_reaction_forces(self, assembler, nodal_displacements):
         """Calculate reaction forces via F_all = K_full @ u_full"""
-        K_full = assembler.assemble_full_stiffness_matrix()
+        K_full = assembler.assemble_stiffness_matrix(include_constrained_dofs=True)
         total_dofs = sum(node.ndof for node in assembler.frame.nodes.values())
         u_full = np.zeros(total_dofs)
         

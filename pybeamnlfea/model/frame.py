@@ -120,14 +120,15 @@ class Frame:
         Solve the frame model and return results.
     
         """
+        # Assemble 
         assembler = Assembler(self)
         
-        # Create and run solver
+        # Run solver
         solver = LinearSolver(solver_type=solver_type)
         nodal_displacements, nodal_forces = solver.solve(assembler)
         results = Results(assembler, nodal_displacements, nodal_forces)
         
-        # Store results in the frame 
+        # Store results 
         self.results = results
         return results 
     

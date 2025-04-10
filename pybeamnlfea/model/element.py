@@ -36,6 +36,8 @@ class ThinWalledBeamElement(Element):
             - local x axis is along the member direction
             - local y and z axes are derived from projections of global y and z
         """
+        node0, node1 = self.nodes[0], self.nodes[1]
+        self.L = node0.distance_to(node1)
 
         a = self.nodes[1].coords - self.nodes[0].coords
         x_local = a / np.linalg.norm(a)
@@ -64,40 +66,116 @@ class ThinWalledBeamElement(Element):
 
         self.R = np.vstack([x_local, y_local, z_local])
 
-    def compute_local_stiffness_matrix(self):
-        """Compute local stiffness matrix."""
-
-        # elastic stiffness components 
+    def compute_elastic_stiffness_matrix(self): 
+        """Compute local elastic stiffness matrix (without geometric effects).""" 
+        # Section and material properties 
         A = self.section.A
         Iy = self.section.Iy
         Iz = self.section.Iz
         J = self.section.J
         Iw = self.section.Iw
         
-        node0, node1 = self.nodes[0], self.nodes[1]
         E = self.material.E
         G = self.material.G
-        L = node0.distance_to(node1)
-        self.length = L
-
-        # geoemtric stiffness components 
-        P0=0
-        My0=0
-        Mz0=0
-        B0_bar=0
-
-        W_bar=0
-        y0=0
-        z0=0
-        beta_y=0
-        beta_z=0
-        r=0
+        L = self.L
         
-        self.k = thin_wall_stiffness_matrix(E, G, A, Iy, Iz, Iw, J, L, 
-                                            P0, My0, Mz0, B0_bar, 
-                                            W_bar, y0, z0, beta_y, beta_z, r)
+        # Elastic stiffness matrix 
+        k_elastic = thin_wall_stiffness_matrix(E, G, A, Iy, Iz, Iw, J, L, 
+                                            0, 0, 0, 0,         # forces
+                                            0, 0, 0, 0, 0, 0)   # geometry  
+        
+        return k_elastic
 
-        return self.k
+    def compute_local_stiffness_matrix(self, include_geometric=False, internal_forces=None):
+        """Compute local stiffness matrix with optional geometric effects."""
+        # Section and material properties
+        A = self.section.A
+        Iy = self.section.Iy
+        Iz = self.section.Iz
+        J = self.section.J
+        Iw = self.section.Iw
+        
+        E = self.material.E
+        G = self.material.G
+        L = self.L
+        
+        # Default force parameters
+        P0 = 0
+        My0 = 0
+        Mz0 = 0
+        B0_bar = 0
+        
+        # Other geometric parameters
+        W_bar = 0
+        y0 = 0
+        z0 = 0
+        beta_y = 0
+        beta_z = 0
+        r = 0
+        
+        if include_geometric and internal_forces is not None:
+            P0 = internal_forces.get('axial', 0)
+            My0 = internal_forces.get('moment_y', 0)
+            Mz0 = internal_forces.get('moment_z', 0)
+            B0_bar = internal_forces.get('bimoment', 0)
+        
+        # Stiffness matrix 
+        k = thin_wall_stiffness_matrix(E, G, A, Iy, Iz, Iw, J, L, 
+                                    P0, My0, Mz0, B0_bar, 
+                                    W_bar, y0, z0, beta_y, beta_z, r)
+        
+        return k
+
+    def compute_geometric_stiffness_matrix(self, internal_forces):
+        """
+        Compute only the geometric stiffness matrix component.
+        """
+        k_full = self.compute_local_stiffness_matrix(include_geometric=True, internal_forces=internal_forces)
+        k_elastic = self.compute_elastic_stiffness_matrix()
+
+        return k_full - k_elastic
+        
+    def compute_internal_forces(self, local_displacements):
+        """
+        Compute internal forces from element local displacements in local coordinates.
+        """
+        # Elastic stiffness matrix 
+        k_elastic = self.compute_elastic_stiffness_matrix()
+        internal_forces_vector = k_elastic @ local_displacements # F = Ku in local coordinates
+        
+        # Map to physical quantities based on the DOF ordering for this element
+        # [Fx1, Fy1, Fz1, Mx1, My1, Mz1, Fx2, Fy2, Fz2, Mx2, My2, Mz2]
+    
+        # Extract internal forces 
+        P1 = internal_forces_vector[0]    # Axial force at start
+        P2 = -internal_forces_vector[6]   # Axial force at end (negative for equilibrium)
+        
+        My1 = internal_forces_vector[4]   
+        My2 = internal_forces_vector[10] 
+        
+        Mz1 = internal_forces_vector[5]   
+        Mz2 = internal_forces_vector[11]  
+        
+        B1 = internal_forces_vector[3]   
+        B2 = internal_forces_vector[9]    
+        
+        # For geometric stiffness, take average quantities 
+        P = (P1 + P2) / 2
+        My = (My1 + My2) / 2 * (1 if My1 + My2 >= 0 else -1)
+        Mz = (Mz1 + Mz2) / 2 * (1 if Mz1 + Mz2 >= 0 else -1)
+        B = (B1 + B2) / 2 * (1 if B1 + B2 >= 0 else -1)
+        
+        # # For moments, maximum absolute values (conservative)
+        # My_max = max(abs(My1), abs(My2)) * (1 if My1 + My2 >= 0 else -1)
+        # Mz_max = max(abs(Mz1), abs(Mz2)) * (1 if Mz1 + Mz2 >= 0 else -1)
+        # B_max = max(abs(B1), abs(B2)) * (1 if B1 + B2 >= 0 else -1)
+        
+        return {
+            'axial': P,
+            'moment_y': My,
+            'moment_z': Mz,
+            'bimoment': B
+        }
     
     def get_local_to_global_transformation_matrix(self):
         """Compute the transformation matrix for this element."""

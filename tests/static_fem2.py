@@ -1,9 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from scipy import linalg
 
 # Author: James Whiteley (github.com/jamesalexwhiteley)
 # Modified to include thin-walled beam effects with warping
+# Further modified to include Euler buckling analysis
 
 # ======================================================================= # 
 # 3D Thin-Walled Frame model
@@ -68,6 +70,7 @@ class ThinWalledFrame3D:
 
         # Initialise system matrices and vectors
         self.K = np.zeros((self.nnodes * self.ndof, self.nnodes * self.ndof))
+        self.Kg = np.zeros((self.nnodes * self.ndof, self.nnodes * self.ndof))  # Geometric stiffness matrix
         self.f = np.zeros(self.nnodes * self.ndof)
         self.a = np.zeros(self.nnodes * self.ndof)
 
@@ -75,6 +78,10 @@ class ThinWalledFrame3D:
         self.dof_free = np.arange(self.nnodes * self.ndof, dtype=int)
         self.dof_con = np.array([], dtype=int)
         self.dof_stiff = []  # finite stiffness supports
+        
+        # For buckling analysis
+        self.buckling_modes = None
+        self.buckling_loads = None
 
     def k_thin_walled_beam(self, E, G, A, Iy, Iz, Iw, J, L, x0=0, y0=0, r=0, 
                           P0=0, Mx0=0, My0=0, B0_bar=0, W_bar=0, beta_x=0, beta_y=0):
@@ -192,6 +199,77 @@ class ThinWalledFrame3D:
 
         return k
 
+    def kg_thin_walled_beam(self, P, L):
+        """
+        Geometric stiffness matrix for a 3D thin-walled beam element.
+        This matrix represents the effect of axial load on bending stiffness.
+        
+        Args:
+            P: Axial force (positive for tension, negative for compression)
+            L: Element length
+            
+        Returns:
+            kg: 14x14 geometric stiffness matrix
+        """
+        kg = np.zeros((14, 14))
+        
+        # Helper function to set symmetric entries
+        def set_symmetric(i, j, value):
+            kg[i, j] = value
+            if i != j:
+                kg[j, i] = value
+        
+        # Terms for lateral displacement v (y-direction)
+        set_symmetric(1, 1, 6/5)
+        set_symmetric(1, 5, L/10)
+        set_symmetric(1, 8, -6/5)
+        set_symmetric(1, 12, L/10)
+        
+        set_symmetric(5, 5, 2*L*L/15)
+        set_symmetric(5, 8, -L/10)
+        set_symmetric(5, 12, -L*L/30)
+        
+        set_symmetric(8, 8, 6/5)
+        set_symmetric(8, 12, -L/10)
+        
+        set_symmetric(12, 12, 2*L*L/15)
+        
+        # Terms for lateral displacement w (z-direction)
+        set_symmetric(2, 2, 6/5)
+        set_symmetric(2, 4, -L/10)
+        set_symmetric(2, 9, -6/5)
+        set_symmetric(2, 11, -L/10)
+        
+        set_symmetric(4, 4, 2*L*L/15)
+        set_symmetric(4, 9, L/10)
+        set_symmetric(4, 11, -L*L/30)
+        
+        set_symmetric(9, 9, 6/5)
+        set_symmetric(9, 11, L/10)
+        
+        set_symmetric(11, 11, 2*L*L/15)
+        
+        # Terms for torsional rotation and warping
+        # Note: these are simplified; more complex models may include more terms
+        set_symmetric(3, 3, 6/5)
+        set_symmetric(3, 6, L/10)
+        set_symmetric(3, 10, -6/5)
+        set_symmetric(3, 13, L/10)
+        
+        set_symmetric(6, 6, 2*L*L/15)
+        set_symmetric(6, 10, -L/10)
+        set_symmetric(6, 13, -L*L/30)
+        
+        set_symmetric(10, 10, 6/5)
+        set_symmetric(10, 13, -L/10)
+        
+        set_symmetric(13, 13, 2*L*L/15)
+        
+        # Scale by axial force P
+        kg *= P/L
+        
+        return kg
+
     def element_rotation_matrix(self, n1, n2):
         """
         Compute a (3x3) rotation matrix R for the element local axes {x_l, y_l, z_l}:
@@ -256,11 +334,15 @@ class ThinWalledFrame3D:
         
         return T.T @ k_local @ T
 
-    def assemble(self):
+    def assemble(self, buckling_load=1.0):
         """
-        Build/assemble the global stiffness matrix K
+        Build/assemble the global stiffness matrix K and geometric stiffness matrix Kg
+        
+        Args:
+            buckling_load: Load factor for scaling the geometric stiffness matrix
         """
         self.K[:] = 0.0  # reset
+        self.Kg[:] = 0.0  # reset
 
         for e in range(self.nelems):
             n1, n2 = self.elems[e]
@@ -289,32 +371,32 @@ class ThinWalledFrame3D:
                 x0=x0, y0=y0, r=r
             )
 
+            # local geometric stiffness matrix (for buckling)
+            kg_loc = self.kg_thin_walled_beam(P=-buckling_load, L=L)  # Negative sign for compression
+
             # rotation matrix
             R = self.element_rotation_matrix(n1, n2)
 
             # transform to global coordinates
             k_g = self.transform_to_global(k_loc, R)
+            kg_g = self.transform_to_global(kg_loc, R)
 
             # global DOFs (7 per node)
             dof = np.zeros(14, dtype=int)
             dof[0:7] = self.ndof*n1 + np.arange(7)
             dof[7:14] = self.ndof*n2 + np.arange(7)
 
-            # for i in range(k_g.shape[0]):
-            #     for j in range(k_g.shape[1]):
-            #         if abs(k_g[i, j]) > 1e-10: 
-            #             print(f"{i, j}  {k_g[i, j]}")
-
             # add to global stiffness matrix
             for i in range(14):
                 for j in range(14):
                     self.K[dof[i], dof[j]] += k_g[i, j]
+                    self.Kg[dof[i], dof[j]] += kg_g[i, j]
 
-        # # add any boundary springs
-        # for sup in self.dof_stiff:
-        #     dof_id = sup['dof']
-        #     k_spring = sup['stiffness']
-        #     self.K[dof_id, dof_id] += k_spring
+        # add any boundary springs
+        for sup in self.dof_stiff:
+            dof_id = sup['dof']
+            k_spring = sup['stiffness']
+            self.K[dof_id, dof_id] += k_spring
 
     def solve(self):
         """
@@ -329,17 +411,72 @@ class ThinWalledFrame3D:
         # solve
         af = np.linalg.solve(Kf, ff)
         self.a[self.dof_free] = af
-        print(af)
-
-        # for i in range(Kf.shape[0]):
-        #     for j in range(Kf.shape[1]):
-        #         if abs(Kf[i, j]) > 1e-10: 
-        #             print(f"{i, j}  {Kf[i, j]}")
 
         # compute reactions
         if len(self.dof_con) > 0:
             Kc = self.K[np.ix_(self.dof_con, self.dof_free)]
             self.f[self.dof_con] = Kc @ af
+            
+    def solve_buckling(self, num_modes=3):
+        """
+        Solve the buckling eigenvalue problem to find critical loads and mode shapes.
+        
+        Args:
+            num_modes: Number of buckling modes to calculate
+            
+        Returns:
+            eigenvalues: Critical buckling loads
+            eigenvectors: Corresponding buckling mode shapes
+        """
+        # Assemble with a unit reference load
+        self.assemble(buckling_load=1.0)
+        
+        # Extract the free DOF submatrices
+        Kf = self.K[np.ix_(self.dof_free, self.dof_free)]
+        Kgf = self.Kg[np.ix_(self.dof_free, self.dof_free)]
+        
+        # Solve generalized eigenvalue problem: Kf·φ = λ·Kgf·φ
+        try:
+            # Use scipy.linalg.eigh for symmetric matrices
+            eigenvalues, eigenvectors = linalg.eigh(Kf, Kgf)
+            
+            # Sort eigenvalues and eigenvectors
+            idx = np.argsort(eigenvalues)
+            eigenvalues = eigenvalues[idx]
+            eigenvectors = eigenvectors[:, idx]
+            
+            # Filter out negative or very small eigenvalues (if any)
+            pos_idx = np.where(eigenvalues > 1e-10)[0]
+            if len(pos_idx) == 0:
+                print("Warning: No positive eigenvalues found.")
+                return None, None
+                
+            eigenvalues = eigenvalues[pos_idx]
+            eigenvectors = eigenvectors[:, pos_idx]
+            
+            # Take only requested number of modes
+            num_available = min(num_modes, len(eigenvalues))
+            eigenvalues = eigenvalues[:num_available]
+            eigenvectors = eigenvectors[:, :num_available]
+            
+            # For buckling problem, the eigenvalue λ is P_cr/P_ref
+            # Since P_ref = 1.0, eigenvalues directly represent critical loads
+            critical_loads = eigenvalues
+            
+            # Expand eigenvectors to full DOF space
+            full_modes = np.zeros((self.nnodes * self.ndof, num_available))
+            for i in range(num_available):
+                full_modes[self.dof_free, i] = eigenvectors[:, i]
+            
+            # Store results
+            self.buckling_loads = critical_loads
+            self.buckling_modes = full_modes
+            
+            return critical_loads, full_modes
+            
+        except np.linalg.LinAlgError:
+            print("Error in eigenvalue calculation. Check model stability.")
+            return None, None
 
     def extract_local_dofs(self, n1, n2, R):
         """
@@ -404,214 +541,13 @@ class ThinWalledFrame3D:
 
         return (u_xl, v_yl, w_zl, rx_xl, phi_xl)
 
-    def plot_deformed_shape(self, scale=1.0, npoints=20, figsize=(10, 8), show_warping=True):
+    def plot_deformed_shape(self, scale=1.0, npoints=20, figsize=(10, 8), show_warping=True, mode_index=None):
         """
-        Plot the deformed shape of the structure
+        Plot the deformed shape of the structure or a buckling mode
         
         Args:
-        scale: Scale factor for the deformation
-        npoints: Number of points to use for interpolation along each element
-        figsize: Figure size
-        show_warping: Whether to visualize warping effects with color
-        """
-        fig = plt.figure(figsize=figsize)
-        ax = fig.add_subplot(111, projection='3d')
-
-        # Track max warping for color scaling
-        max_warping = 0
-        
-        # Process each element
-        for e in range(self.nelems):
-            n1, n2 = self.elems[e]
-            x1, y1, z1 = self.nodes[n1]
-            x2, y2, z2 = self.nodes[n2]
-            dx, dy, dz = (x2 - x1), (y2 - y1), (z2 - z1)
-            L = np.sqrt(dx*dx + dy*dy + dz*dz)
-            if L < 1e-14:
-                continue
-
-            # Plot undeformed configuration
-            ax.plot([x1, x2], [y1, y2], [z1, z2], 'k--', lw=0.5)
-
-            # Get the rotation matrix
-            R = self.element_rotation_matrix(n1, n2)
-            
-            # Extract local DOFs
-            dof_loc = self.extract_local_dofs(n1, n2, R)
-
-            # Build array of points along the element
-            xyz_def = np.zeros((npoints+1, 3))
-            if show_warping:
-                warping_values = np.zeros(npoints+1)
-                
-            for i in range(npoints+1):
-                xi = i / npoints
-                if show_warping:
-                    (u_xl, v_yl, w_zl, rx_xl, phi_xl) = self.shape_thin_walled_beam(xi, L, dof_loc)
-                    warping_values[i] = abs(phi_xl)
-                    max_warping = max(max_warping, abs(phi_xl))
-                else:
-                    (u_xl, v_yl, w_zl, rx_xl, _) = self.shape_thin_walled_beam(xi, L, dof_loc)
-                    
-                # Local displacement vector
-                disp_loc = np.array([u_xl, v_yl, w_zl])
-                disp_g = R @ disp_loc
-                # Base point
-                base = np.array([x1, y1, z1]) + xi*np.array([dx, dy, dz])
-                xyz_def[i] = base + scale*disp_g
-
-            # Plot the deformed shape
-            if show_warping:
-                # Use a colormap to visualize warping
-                points = np.array([xyz_def[:-1, 0], xyz_def[:-1, 1], xyz_def[:-1, 2]]).T
-                segments = np.array([xyz_def[:-1], xyz_def[1:]]).transpose((1, 0, 2))
-                for i in range(npoints):
-                    ax.plot([segments[i, 0, 0], segments[i, 1, 0]], 
-                            [segments[i, 0, 1], segments[i, 1, 1]], 
-                            [segments[i, 0, 2], segments[i, 1, 2]],
-                            color=plt.cm.coolwarm(warping_values[i]/max(max_warping, 1e-10)), 
-                            lw=1.5)
-            else:
-                ax.plot(xyz_def[:, 0], xyz_def[:, 1], xyz_def[:, 2], 'b-', lw=1.5)
-                
-            # Plot the deformed endpoints
-            ax.scatter(xyz_def[0, 0], xyz_def[0, 1], xyz_def[0, 2], color='b', s=25)
-            ax.scatter(xyz_def[-1, 0], xyz_def[-1, 1], xyz_def[-1, 2], color='b', s=25)
-
-        # Configure the plot
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.set_zlabel('Z')
-        plt.gca().set_aspect('equal', adjustable='box')
-        
-        # Add a colorbar if showing warping
-        if show_warping and max_warping > 1e-10:
-            sm = plt.cm.ScalarMappable(cmap=plt.cm.coolwarm, norm=plt.Normalize(0, max_warping))
-            sm.set_array([])
-            cbar = plt.colorbar(sm, ax=ax, pad=0.1)
-            cbar.set_label('Warping magnitude')
-            
-        plt.tight_layout()
-        plt.show()
-
-    # def add_point_load(self, node_id, direction, magnitude):
-    #     """
-    #     Add a point load at a specific node.
-        
-    #     Args:
-    #         node_id: Node index
-    #         direction: Direction index (0-6 for u, v, w, θx, θy, θz, φ)
-    #         magnitude: Load magnitude
-    #     """
-    #     dof_id = self.ndof * node_id + direction
-    #     self.f[dof_id] += magnitude
-
-    # def add_point_displacement(self, node_id, direction, value):
-    #     """
-    #     Add a prescribed displacement boundary condition.
-        
-    #     Args:
-    #         node_id: Node index
-    #         direction: Direction index (0-6 for u, v, w, θx, θy, θz, φ)
-    #         value: Prescribed displacement value
-    #     """
-    #     dof_id = self.ndof * node_id + direction
-        
-    #     # Add to constrained DOFs if not already there
-    #     if dof_id not in self.dof_con:
-    #         self.dof_con = np.append(self.dof_con, dof_id)
-    #         # Update free DOFs
-    #         self.dof_free = np.setdiff1d(np.arange(self.nnodes*self.ndof), self.dof_con)
-        
-    #     # Set the prescribed value
-    #     self.a[dof_id] = value
-
-    # def add_elastic_support(self, node_id, direction, stiffness):
-    #     """
-    #     Add an elastic support (spring) at a node.
-        
-    #     Args:
-    #     node_id: Node index
-    #     direction: Direction index (0-6 for u, v, w, θx, θy, θz, φ)
-    #     stiffness: Spring stiffness
-    #     """
-    #     dof_id = self.ndof * node_id + direction
-    #     self.dof_stiff.append({
-    #         'dof': dof_id,
-    #         'stiffness': stiffness
-    #     })
-
-class Frame3D(ThinWalledFrame3D):   
-    def __init__(self, nodes, elems, E=200e9, A=0.1):
-        """
-        Frame object. Input node xyz locations and element connectivity array. 
-
-        Args: 
-            nodes : np.array(
-                        [[x1, y1, z1], 
-                        [x2, y2, z2], 
-                        ... 
-            elements : np.array( 
-                        [[0, 1], 
-                        [1, 2], 
-                        ...
-
-        """
-        nelems = elems.shape[0]
-
-        E = np.full(nelems, 1)  
-        G = np.full(nelems, 1)   
-        A = np.full(nelems, 1)   
-        Iy = np.full(nelems, 1)  
-        Iz = np.full(nelems, 1)  
-        J = np.full(nelems, 1)   
-        Iw = np.full(nelems, 1) 
-
-        frame = ThinWalledFrame3D(nodes, elems, E, G, A, Iy, Iz, J, Iw)
-
-        dof_constrained = np.array([0,1,2,3,4,5], dtype=int) 
-
-        # dof_constrained = np.array([0,1,2,3,4,5,
-        #                             7,8,9,10,11,12,
-        #                             14,15,16,17,18,19,
-        #                             21,22,23,24,25,26], dtype=int) 
-
-        # dof_constrained = np.array([0,1,2,
-        #                             6,7,8,
-        #                             12,13,14,
-        #                             18,19,20], dtype=int) 
-
-        frame.dof_con = dof_constrained
-        frame.dof_free = np.setdiff1d(np.arange(frame.nnodes*frame.ndof), frame.dof_con) 
-        frame.f[7*1 + 1] = -1 
-        # frame.f[7*19 + 2] = -1
-
-        frame.solve()
-        frame.plot_deformed_shape(scale=1.0, npoints=30)
-
-
-if __name__ == "__main__":
-
-    nodes = np.array([
-        [0.0, 0.0, 0.0],
-        [0.0, 0.0, 1.0],
-    ])
-
-    elems = np.array([
-        [0, 1],
-    ])
-
-    # # Create nodes 
-    # num_nodes = 20
-    # theta = np.linspace(0, np.pi/2, num_nodes)
-    # radius = 1.0
-    # nodes = np.zeros((num_nodes, 3))
-    # nodes[:, 0] = radius * np.cos(theta) 
-    # nodes[:, 1] = radius * np.sin(theta)  
-
-    # # Create elements 
-    # elems = np.zeros((num_nodes-1, 2), dtype=int)
-    # for i in range(num_nodes-1):
-    #     elems[i] = [i, i+1]
-
-    Frame3D(nodes, elems)
+            scale: Scale factor for the deformation
+            npoints: Number of points to use for interpolation along each element
+            figsize: Figure size
+            show_warping: Whether to visualize warping effects with color
+            mode_index: Index of buckling mode to plot (None for standard deformation)
