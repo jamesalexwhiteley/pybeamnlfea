@@ -41,3 +41,7 @@ print(results.get_nodal_forces(0))
 # Plot the model
 beam.show() 
 
+# Linear buckling analysis 
+beam.eigen_solve(num_modes=15)
+beam.show_mode_shapes(scale=2.0)
+

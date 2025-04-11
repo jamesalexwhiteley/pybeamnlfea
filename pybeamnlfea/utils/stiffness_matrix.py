@@ -4,13 +4,13 @@ from scipy.sparse import lil_matrix
 # Author: James Whiteley (github.com/jamesalexwhiteley)
 
 def thin_wall_stiffness_matrix(E, G, A, Iy, Iz, Iw, J, L, 
-                                P0=0, My0=0, Mz0=0, B0_bar=0, W_bar=0,
-                                y0=0, z0=0, beta_y=0, beta_z=0, r=0):
+                                P0=0, My0=0, Mz0=0, B0_bar=0, 
+                                W_bar=0, y0=0, z0=0, beta_y=0, beta_z=0, r=0):
     """
     Create the element stiffness matrix for a 3D thin-walled beam element.
     
     Args:
-        E : floats
+        E : float
             Young's modulus
         G : float
             Shear modulus
@@ -29,7 +29,7 @@ def thin_wall_stiffness_matrix(E, G, A, Iy, Iz, Iw, J, L,
         My0, Mz0 : float, optional
             Bending moments about y and z axes
         B0_bar, W_bar : float, optional
-            Bimoment and warping Args:
+            Bimoment and warping parameter 
         y0, z0 : float, optional
             Coordinates of the shear center
         beta_y, beta_z : float, optional

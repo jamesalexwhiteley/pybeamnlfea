@@ -142,33 +142,28 @@ class ThinWalledBeamElement(Element):
         # Elastic stiffness matrix 
         k_elastic = self.compute_elastic_stiffness_matrix()
         internal_forces_vector = k_elastic @ local_displacements # F = Ku in local coordinates
-        
+
         # Map to physical quantities based on the DOF ordering for this element
-        # [Fx1, Fy1, Fz1, Mx1, My1, Mz1, Fx2, Fy2, Fz2, Mx2, My2, Mz2]
+        # [Fx1, Fy1, Fz1, Mx1, My1, Mz1, Bx1, Fx2, Fy2, Fz2, Mx2, My2, Mz2, Bx2]
     
         # Extract internal forces 
-        P1 = internal_forces_vector[0]    # Axial force at start
-        P2 = -internal_forces_vector[6]   # Axial force at end (negative for equilibrium)
+        P1 =  internal_forces_vector[0]   # Axial force at start
+        P2 = -internal_forces_vector[7]   # Axial force at end (negative for equilibrium)
         
         My1 = internal_forces_vector[4]   
-        My2 = internal_forces_vector[10] 
+        My2 = internal_forces_vector[11] 
         
         Mz1 = internal_forces_vector[5]   
-        Mz2 = internal_forces_vector[11]  
+        Mz2 = internal_forces_vector[12]  
         
-        B1 = internal_forces_vector[3]   
-        B2 = internal_forces_vector[9]    
+        B1 =  internal_forces_vector[6]   
+        B2 =  internal_forces_vector[13]    
         
         # For geometric stiffness, take average quantities 
         P = (P1 + P2) / 2
         My = (My1 + My2) / 2 * (1 if My1 + My2 >= 0 else -1)
         Mz = (Mz1 + Mz2) / 2 * (1 if Mz1 + Mz2 >= 0 else -1)
         B = (B1 + B2) / 2 * (1 if B1 + B2 >= 0 else -1)
-        
-        # # For moments, maximum absolute values (conservative)
-        # My_max = max(abs(My1), abs(My2)) * (1 if My1 + My2 >= 0 else -1)
-        # Mz_max = max(abs(Mz1), abs(Mz2)) * (1 if Mz1 + Mz2 >= 0 else -1)
-        # B_max = max(abs(B1), abs(B2)) * (1 if B1 + B2 >= 0 else -1)
         
         return {
             'axial': P,

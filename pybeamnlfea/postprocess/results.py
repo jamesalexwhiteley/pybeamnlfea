@@ -5,7 +5,7 @@ from mpl_toolkits.mplot3d import Axes3D
 # Author: James Whiteley (github.com/jamesalexwhiteley)
 
 class Results:
-    def __init__(self, assembler, global_displacements, global_forces):
+    def __init__(self, assembler, global_displacements, global_forces=None):
         """
         Results class to store and process solution results.
     

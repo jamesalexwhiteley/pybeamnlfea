@@ -1,5 +1,7 @@
 import numpy as np 
-from scipy.sparse.linalg import eigsh
+from scipy.sparse.linalg import spsolve, eigsh, eigs
+from scipy.linalg import inv
+from scipy.sparse import eye, csc_matrix
 from pybeamnlfea.solver.linear import LinearSolver 
 
 # Author: James Whiteley (github.com/jamesalexwhiteley)
@@ -13,20 +15,28 @@ class EigenSolver(LinearSolver):
         """Solve linear eigenvalue problem."""
         # Linear analysis -> internal member forces 
         nodal_displacements, _ = self.solve(assembler)
-        element_internal_forces = self._calculate_element_internal_forces(assembler, nodal_displacements)
+        element_internal_forces = self._calculate_element_internal_forces(assembler, nodal_displacements) 
         
-        # Assemble elastic stiffness matrix 
-        K = assembler.assemble_stiffness_matrix() 
-        
-        # Assemble geometric stiffness matrix 
-        K_full = assembler.assemble_stiffness_matrix(geometric_stiffness=True, element_internal_forces=element_internal_forces) 
-        Kg = K_full - K 
-        
-        # Buckling analysis (K-λKg)Φ=0
-        from scipy.sparse import eye
-        Kg_reg = Kg - 1e-10 * eye(Kg.shape[0]) 
-        eigenvalues, eigenvectors = eigsh(K, k=self.num_modes, M=-Kg_reg, which='LM')
-        critical_factors = eigenvalues
+        # Classical approach (generalised eigenvalue problem |Km − PKg| = 0)
+        try: 
+            Ktot = assembler.assemble_stiffness_matrix(geometric_stiffness=True, element_internal_forces=element_internal_forces) 
+            Km = assembler.assemble_stiffness_matrix(geometric_stiffness=False)
+            Kg = Ktot - Km
+
+            # |Km − PKg| = 0 can be rearranged to |A − (1/λ)I| = 0 where A = Km^-1 @ Kg 
+            A = spsolve(Km.tocsc(), (Kg + 1e-10 * eye(Kg.shape[0])).tocsc())
+            eigenvalues, eigenvectors = eigs(csc_matrix(A), k=self.num_modes, which='LM')
+            eigenvalues, eigenvectors = np.real(eigenvalues), np.real(eigenvectors)
+
+            # Sort results 
+            idx = np.argsort(np.abs(eigenvalues))[::-1]
+            eigenvalues = eigenvalues[idx]
+            eigenvectors = eigenvectors[:, idx]
+            critical_loads = 1 / eigenvalues
+
+        except Exception as e: 
+            print(f"EigenSolver failed with error message: {e}")
+            return [], [] 
         
         # Eigenvectors -> nodal displacements (modes)
         buckling_modes = []
@@ -34,7 +44,7 @@ class EigenSolver(LinearSolver):
             mode_displacements = self._get_nodal_displacements(assembler, eigenvectors[:, i])
             buckling_modes.append(mode_displacements)
             
-        return critical_factors, buckling_modes
+        return critical_loads, buckling_modes
     
     def _calculate_element_internal_forces(self, assembler, nodal_displacements):                
         """Calculate internal forces for each element based on global displacements."""

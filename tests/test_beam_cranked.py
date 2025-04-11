@@ -9,7 +9,7 @@ from pybeamnlfea.model.load import NodalLoad
 # Author: James Whiteley (github.com/jamesalexwhiteley)
 
 # Create a beam structure 
-n = 2
+n = 4
 beam = Frame() 
 beam.add_nodes([[i/n, 0, 0] for i in range(n)] + [[1.0, i/n, 0] for i in range(n+1)])
 
