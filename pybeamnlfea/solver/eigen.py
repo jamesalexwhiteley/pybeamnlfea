@@ -11,7 +11,7 @@ class EigenSolver(LinearSolver):
         super().__init__(solver_type=solver_type)
         self.num_modes = num_modes
 
-    def eigen_solve(self, assembler):
+    def solve_eigen(self, assembler):
         """Solve linear eigenvalue problem."""
         # Linear analysis -> internal member forces 
         nodal_displacements, _ = self.solve(assembler)

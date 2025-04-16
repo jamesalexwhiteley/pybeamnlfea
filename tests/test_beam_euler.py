@@ -25,5 +25,5 @@ beam.add_boundary_condition(n, [1, 0, 0, 0, 1, 0, 0], BoundaryCondition)
 beam.add_nodal_load(n, [-1, 0, 0, 0, 0, 0, 0], NodalLoad) 
 
 # Linear buckling analysis 
-beam.eigen_solve()
+beam.solve_eigen()
 beam.show_mode_shapes()

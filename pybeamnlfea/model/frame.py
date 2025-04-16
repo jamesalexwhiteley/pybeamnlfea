@@ -219,14 +219,14 @@ class Frame:
         self.results = results 
         return results 
     
-    def eigen_solve(self, num_modes: int=5) -> Results:
+    def solve_eigen(self, num_modes: int=5) -> Results:
         """
         Solve the frame model with a linear EigenSolver and return results.
         """
 
         self.assembler = Assembler(self)
         solver = EigenSolver(num_modes=num_modes)
-        self.critical_loads, self.buckling_modes = solver.eigen_solve(self.assembler)
+        self.critical_loads, self.buckling_modes = solver.solve_eigen(self.assembler)
     
         return self.critical_loads, self.buckling_modes 
     
@@ -251,7 +251,7 @@ class Frame:
         """
         if self.buckling_modes is None:
             print("Eigen has not been solved yet. Solving with default settings...")
-            self.eigen_solve()
+            self.solve_eigen()
         
         for i, (mode, load_factor) in enumerate(zip(self.buckling_modes, self.critical_loads)):
             print(f"Mode {i+1}: Critical load factor = {load_factor}")

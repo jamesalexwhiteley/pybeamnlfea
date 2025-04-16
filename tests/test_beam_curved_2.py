@@ -41,6 +41,6 @@ results = beam.solve()
 beam.show() 
 
 # Linear buckling analysis 
-beam.eigen_solve(num_modes=15)
+beam.solve_eigen(num_modes=15)
 beam.show_mode_shapes(scale=2.0)
 

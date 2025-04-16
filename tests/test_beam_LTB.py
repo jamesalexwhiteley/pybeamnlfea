@@ -15,9 +15,9 @@ beam.add_nodes([[i*L/n, 0, 0] for i in range(n+1)])
 
 # Material and section properties for steel UB127x76x13
 # Steel properties
-E = 210e9   # Pa
-G = 80e9    # Pa
-rho = 7850  # kg/m³
+E = 210e9   # N/m2
+G = 80e9    # N/m2 
+rho = 7850  # kg/m3
 
 # UB127x76x13 section properties
 A = 1662e-6   # m2
@@ -49,7 +49,7 @@ beam.show()
 
 # Run eigenvalue buckling analysis
 print("Running eigenvalue buckling analysis...")
-eigenvalues, eigenvectors = beam.eigen_solve(num_modes=5)  # Calculate first 5 buckling modes
+eigenvalues, eigenvectors = beam.solve_eigen(num_modes=5)  # Calculate first 5 buckling modes
 print("Buckling eigenvalues (load factors):")
 for i, val in enumerate(eigenvalues):
     print(f"Mode {i+1}: {val}")
@@ -67,9 +67,9 @@ for mode in range(len(eigenvalues)):
     print(f"  Max torsional rotation: {max_torsion:.4e}")
     
     if max_lateral_disp > 1e-6 and max_torsion > 1e-6:
-        print(f"  ✓ Mode {mode+1} exhibits characteristics of lateral torsional buckling")
+        print(f"✓ Mode {mode+1} exhibits characteristics of lateral torsional buckling")
     else:
-        print(f"  ✗ Mode {mode+1} does not appear to be a lateral torsional buckling mode")
+        print(f"✗ Mode {mode+1} does not appear to be a lateral torsional buckling mode")
 
 # Visualization of the critical buckling mode 
 beam.plot_mode_shape(0, scale=0.5)
