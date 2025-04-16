@@ -39,17 +39,13 @@ beam.add_boundary_condition(n, [0, 0, 0, 1, 1, 1, 0], BoundaryCondition)
 # Add gravity load
 beam.add_gravity_load([0, 0, -100])
 
-# moment_magnitude = 1e6  # Nm
-# beam.add_nodal_load(0, [0, 0, 0, 0, moment_magnitude, 0, 0], NodalLoad)
-# beam.add_nodal_load(n, [0, 0, 0, 0, -moment_magnitude, 0, 0], NodalLoad)
-
 # Linear analysis 
 beam.solve() 
 beam.show() 
 
-# Run eigenvalue buckling analysis
+# Run eigenvalue buckling analysis 
 print("Running eigenvalue buckling analysis...")
-eigenvalues, eigenvectors = beam.solve_eigen(num_modes=5)  # Calculate first 5 buckling modes
+eigenvalues, eigenvectors = beam.solve_eigen(num_modes=20) 
 print("Buckling eigenvalues (load factors):")
 for i, val in enumerate(eigenvalues):
     print(f"Mode {i+1}: {val}")
@@ -57,19 +53,20 @@ for i, val in enumerate(eigenvalues):
 print("\nAnalyzing buckling modes to identify LTB:")
 for mode in range(len(eigenvalues)):
     # Extract the mode shape data
-    mode_data = beam.get_mode_shape(mode)
-    max_lateral_disp = max(abs(node_data[1]) for node_data in mode_data)
-    max_torsion = max(abs(node_data[3]) for node_data in mode_data)
+    mode_data = beam.buckling_modes[mode]
+
+    # Maximum (minor axis) lateral displacement 
+    lateral_disps = [abs(mode_data.get((node, 1), 0)) for node in range(n+1)]
+    max_lateral_disp = max(lateral_disps) if lateral_disps else 0
     
-    # If both lateral displacement and torsional rotation are significant, classify as LTB
-    print(f"Mode {mode+1}:")
-    print(f"  Max lateral displacement: {max_lateral_disp:.4e}")
-    print(f"  Max torsional rotation: {max_torsion:.4e}")
+    # Maximum torsional rotation 
+    torsional_rots = [abs(mode_data.get((node, 3), 0)) for node in range(n+1)]
+    max_torsion = max(torsional_rots) if torsional_rots else 0
     
     if max_lateral_disp > 1e-6 and max_torsion > 1e-6:
         print(f"✓ Mode {mode+1} exhibits characteristics of lateral torsional buckling")
     else:
         print(f"✗ Mode {mode+1} does not appear to be a lateral torsional buckling mode")
 
-# Visualization of the critical buckling mode 
-beam.plot_mode_shape(0, scale=0.5)
+# # Visualization of the critical buckling mode 
+# beam.show_mode_shapes(scale=10)
