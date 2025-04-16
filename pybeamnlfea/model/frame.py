@@ -198,8 +198,6 @@ class Frame:
             element = self.elements[element_id]
             vol = element.section.A * element.L 
             force = 9.81 * vol * element.material.density 
-            print(force)
-            print(scale_factor)
         
             self.add_uniform_load(element_id, np.array(scale_factor) * force, UniformLoad) 
 

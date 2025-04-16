@@ -39,9 +39,9 @@ beam.add_boundary_condition(n, [0, 0, 0, 1, 1, 1, 0], BoundaryCondition)
 # Add gravity load
 beam.add_gravity_load([0, 0, -100])
 
-# Linear analysis 
-beam.solve() 
-beam.show() 
+# # Linear analysis 
+# beam.solve() 
+# beam.show() 
 
 # Run eigenvalue buckling analysis 
 print("Running eigenvalue buckling analysis...")
