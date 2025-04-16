@@ -13,7 +13,7 @@ beam = Frame()
 beam.add_nodes([[i/n, 0, 0] for i in range(n+1)])
 
 # Add material and section (UB127x76x13) 
-beam.add_material("material", LinearElastic(E=1, G=1)) 
+beam.add_material("material", LinearElastic(rho=1, E=1, G=1)) 
 beam.add_section("section", Section(A=1, Iy=1, Iz=1e4, J=1, Iw=1, y0=0, z0=0)) 
 
 # Add element 

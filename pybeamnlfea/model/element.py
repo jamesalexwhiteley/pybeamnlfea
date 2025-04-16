@@ -172,7 +172,7 @@ class ThinWalledBeamElement(Element):
             'bimoment': B
         }
     
-    def get_local_to_global_transformation_matrix(self):
+    def compute_local_to_global_transformation_matrix(self):
         """Compute the transformation matrix for this element."""
         
         # Rotation matrix  
@@ -186,7 +186,7 @@ class ThinWalledBeamElement(Element):
         
         return Q
     
-    def get_controid_transformation_matrix(self): 
+    def compute_controid_transformation_matrix(self): 
         """Compute the -> centroidal system transformation matrix for this element."""
 
         C = np.eye(14)  
@@ -212,9 +212,9 @@ class ThinWalledBeamElement(Element):
         """
         Compute the transformation matrix T = (CQC^-1)^-1 
         """
-        # C = self.get_controid_transformation_matrix()
-        # Q = self.get_local_to_global_transformation_matrix()
+        # C = self.compute_controid_transformation_matrix()
+        # Q = self.compute_local_to_global_transformation_matrix()
         # self.T = np.linalg.inv(C @ Q @ np.linalg.inv(C))   
-        self.T = self.get_local_to_global_transformation_matrix()                       # NOTE                  
+        self.T = self.compute_local_to_global_transformation_matrix()                       # NOTE                  
  
         return self.T

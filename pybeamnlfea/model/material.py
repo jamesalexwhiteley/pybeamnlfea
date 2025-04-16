@@ -7,7 +7,7 @@ class Material:
     """
     Base material class. 
     """
-    def __init__(self, **kwargs):
+    def __init__(self, rho: float, **kwargs):
         """
         Initialise a generic material.
         
@@ -15,6 +15,8 @@ class Material:
             **kwargs : dict
                 Material properties
         """
+        self.density = rho 
+
         # Store additional properties
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -23,9 +25,11 @@ class LinearElastic(Material):
     """
     Linear elastic material.
     """
-    def __init__(self, E: float, nu: float = None, G: float = None, **kwargs):
+    def __init__(self, rho: float, E: float, nu: float = None, G: float = None, **kwargs):
         """        
         Args: 
+            rho : float  
+                Density 
             E : float
                 Young's modulus 
             nu : float
@@ -35,7 +39,7 @@ class LinearElastic(Material):
             **kwargs : dict
                 Additional material properties
         """
-        super().__init__(**kwargs)
+        super().__init__(rho, **kwargs)
         self.E = E
         self.nu = nu
         

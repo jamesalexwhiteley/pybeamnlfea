@@ -6,7 +6,7 @@ from pybeamnlfea.model.material import Material
 from pybeamnlfea.model.section import Section 
 from pybeamnlfea.model.element import Element 
 from pybeamnlfea.model.boundary import BoundaryCondition 
-from pybeamnlfea.model.load import Load 
+from pybeamnlfea.model.load import Load, NodalLoad, UniformLoad
 
 from pybeamnlfea.solver.assembly import Assembler 
 from pybeamnlfea.solver.linear import LinearSolver 
@@ -109,12 +109,99 @@ class Frame:
         
         self.boundary_conditions[node_id] = boundary_class(node_id, constraints)
         
-    def add_nodal_load(self, node_id: int, forces: List[float], load_class) -> None:
+    def add_nodal_load(self, node_id: int, forces: List[float], load_class=NodalLoad) -> None:
         """Add a load to a node."""
-        if node_id not in self.nodes:
+        if node_id not in self.nodes:   
             raise ValueError(f"Node {node_id} not found in the frame")
         
         self.loads[node_id] = load_class(node_id, forces)
+
+    def add_uniform_load(self, element_id: int, forces: List[float], load_class=UniformLoad) -> None:
+        """
+        Add a uniform load to an element in its local coordinate system.
+        
+        Args:
+            element_id: Element to apply the load to
+            force_vector: [wx, wy, wz] intensities in local coordinates (force per unit length)
+                - wx: axial direction 
+                - wy, wz: transverse directions 
+        """
+        if element_id not in self.elements:
+            raise ValueError(f"Element {element_id} not found in the frame")
+        
+        # Store the uniform load object
+        if not hasattr(self, 'uniform_loads'):
+            self.uniform_loads = {}
+        self.uniform_loads[element_id] = load_class(element_id, forces)
+        
+        # Get element information
+        element = self.elements[element_id]
+        node_i_id, node_j_id = element.nodes[0].id, element.nodes[1].id
+        length = element.L
+        
+        # Get local components
+        wx, wy, wz = forces
+        
+        # Calculate nodal forces and moments in local coordinates
+        local_force_i = np.zeros(7)  # [Fx, Fy, Fz, Mx, My, Mz, Bx]
+        local_force_j = np.zeros(7)
+        
+        # Axial load (wx) - only creates forces, no moments
+        local_force_i[0] = wx * length / 2
+        local_force_j[0] = wx * length / 2
+        
+        # Transverse loads - create both forces and moments
+        # wy load (local y-direction)
+        local_force_i[1] = -wy * length / 2
+        local_force_j[1] = -wy * length / 2
+        local_force_i[5] = -wy * length**2 / 12   # Mz at node i
+        local_force_j[5] =  wy * length**2 / 12   # Mz at node j
+        
+        # wz load (local z-direction)
+        local_force_i[2] = -wz * length / 2
+        local_force_j[2] = -wz * length / 2
+        local_force_i[4] = -wz * length**2 / 12   # My at node i
+        local_force_j[4] =  wz * length**2 / 12   # My at node j
+        
+        # Transform local forces to global coordinates
+        T = element.compute_transformation_matrix() 
+        T_i = T[:7, :7] 
+        T_j = T[7:, 7:] 
+        
+        # Transform local forces -> global coordinates
+        global_force_i = T_i @ local_force_i
+        global_force_j = T_j @ local_force_j
+
+        # Add or update existing nodal loads in global coordinates
+        if node_i_id in self.loads:
+            self.loads[node_i_id].force_vector += global_force_i
+        else:
+            self.loads[node_i_id] = NodalLoad(node_i_id, global_force_i)
+        
+        if node_j_id in self.loads:
+            self.loads[node_j_id].force_vector += global_force_j
+        else:
+            self.loads[node_j_id] = NodalLoad(node_j_id, global_force_j)
+
+    def add_gravity_load(self, scale_factor: List[float]=[0, 0, -1]) -> None:
+        """
+        Add a uniform load to an element in its local coordinate system equivalent to self weight under gravity.
+        
+        Args:
+            element_id: Element to apply the load to
+            scale_factor: [wx, wy, wz] scale in local coordinates (force per unit length)
+
+        """
+        for element_id in self.elements:
+            
+            # Weight of element -> gravity load 
+            element = self.elements[element_id]
+            vol = element.section.A * element.L 
+            force = 9.81 * vol * element.material.density 
+            print(force)
+            print(scale_factor)
+        
+            self.add_uniform_load(element_id, np.array(scale_factor) * force, UniformLoad) 
 
     def solve(self, solver_type: str='direct') -> Results:
         """
@@ -129,7 +216,7 @@ class Frame:
         results = Results(assembler, nodal_displacements, nodal_forces)
         
         # Store results 
-        self.results = results
+        self.results = results 
         return results 
     
     def eigen_solve(self, num_modes: int=5) -> Results:
