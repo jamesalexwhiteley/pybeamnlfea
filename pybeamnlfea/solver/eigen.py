@@ -25,7 +25,7 @@ class EigenSolver(LinearSolver):
 
             # |Km − PKg| = 0 can be rearranged to |A − (1/λ)I| = 0 where A = Km^-1 @ Kg 
             A = spsolve(Km.tocsc(), (Kg + 1e-10 * eye(Kg.shape[0])).tocsc())
-            eigenvalues, eigenvectors = eigs(csc_matrix(A), k=self.num_modes, which='LM')
+            eigenvalues, eigenvectors = eigs(csc_matrix(A), k=self.num_modes, which='LR')
             eigenvalues, eigenvectors = np.real(eigenvalues), np.real(eigenvectors)
 
             # Sort results 

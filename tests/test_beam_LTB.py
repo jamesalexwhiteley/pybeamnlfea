@@ -8,11 +8,11 @@ from pybeamnlfea.model.load import UniformLoad, NodalLoad
 # Author: James Whiteley (github.com/jamesalexwhiteley) 
 
 # Create a beam structure 
-n = 10
-L = 8.0 # m 
+n = 20
+L = 20 # m 
 beam = Frame() 
 beam.add_nodes([[i*L/n, 0, 0] for i in range(n+1)])
-
+    
 # Material and section properties for steel UB127x76x13
 # Steel properties
 E = 210e9   # N/m2
@@ -20,11 +20,11 @@ G = 80e9    # N/m2
 rho = 7850  # kg/m3
 
 # UB127x76x13 section properties
-A = 1662e-6   # m2
-Iy = 4.98e-6  # m4
-Iz = 0.65e-6  # m4
-J = 0.025e-6  # m4
-Iw = 0.63e-9  # m6
+A = 1650e-6    # m2
+Iy = 0.746e-6  # m4
+Iz = 0.147e-6  # m4
+J = 0.0285e-6  # m4
+Iw = 0.002e-12 # m6
 
 beam.add_material("steel", LinearElastic(rho=rho, E=E, G=G))
 beam.add_section("UB127x76x13", Section(A=A, Iy=Iy, Iz=Iz, J=J, Iw=Iw, y0=0, z0=0))
@@ -33,40 +33,64 @@ beam.add_section("UB127x76x13", Section(A=A, Iy=Iy, Iz=Iz, J=J, Iw=Iw, y0=0, z0=
 beam.add_elements([[i, i+1] for i in range(n)], "steel", "UB127x76x13", element_class=ThinWalledBeamElement) 
 
 # Add boundary conditions 
-beam.add_boundary_condition(0, [0, 0, 0, 1, 1, 1, 0], BoundaryCondition) 
-beam.add_boundary_condition(n, [0, 0, 0, 1, 1, 1, 0], BoundaryCondition) 
+beam.add_boundary_condition(0, [0, 0, 0, 0, 1, 1, 1], BoundaryCondition) 
+beam.add_boundary_condition(n, [1, 0, 0, 1, 1, 1, 1], BoundaryCondition) 
 
-# Add gravity load
-beam.add_gravity_load([0, 0, -100])
+# Add load
+# beam.add_gravity_load([0, 0, -1])
+# w = beam.get_self_weight()
+for i in range(n): 
+    beam.add_uniform_load(i, [0, 1e-6, -1], UniformLoad)
+w = 1.0
 
 # # Linear analysis 
 # beam.solve() 
-# beam.show() 
+# beam.show(scale=1000) 
 
 # Run eigenvalue buckling analysis 
 print("Running eigenvalue buckling analysis...")
-eigenvalues, eigenvectors = beam.solve_eigen(num_modes=20) 
+eigenvalues, eigenvectors = beam.solve_eigen(num_modes=5) 
 print("Buckling eigenvalues (load factors):")
 for i, val in enumerate(eigenvalues):
-    print(f"Mode {i+1}: {val}")
+    coeff = val * w / ((G * J * E * Iy)**0.5 / L**3)
+    print(f"Mode {i+1}: wcr={w * val} coeff={coeff}")
 
-print("\nAnalyzing buckling modes to identify LTB:")
-for mode in range(len(eigenvalues)):
-    # Extract the mode shape data
-    mode_data = beam.buckling_modes[mode]
+# print(f"w_crit = {coeff * (G * J * E * Iy)**0.5 / L**3}")
 
-    # Maximum (minor axis) lateral displacement 
-    lateral_disps = [abs(mode_data.get((node, 1), 0)) for node in range(n+1)]
-    max_lateral_disp = max(lateral_disps) if lateral_disps else 0
+# TODO test linear deflection results against prediction from simple formula 
+# TODO compare w crit to Stratford and Burgoyne 
+# TODO visualise torsion? 
+
+# print("\nAnalyzing buckling modes to identify LTB:")
+# for mode in range(len(eigenvalues)):
+#     # Extract the mode shape data
+#     mode_data = beam.buckling_modes[mode]
+
+#     # Maximum (major axis) lateral displacement 
+#     lateral_disps = [abs(mode_data.get((node, 2), 0)) for node in range(n+1)]
+#     max_lateral_major = max(lateral_disps) if lateral_disps else 0
+#     if max_lateral_major > 1e-6: 
+#         print(f"✓ Major {max_lateral_major}")
+#     else: 
+#         print(f"✗ Major {max_lateral_major}")
+
+#     # Maximum (minor axis) lateral displacement 
+#     lateral_disps = [abs(mode_data.get((node, 1), 0)) for node in range(n+1)]
+#     max_lateral_minor = max(lateral_disps) if lateral_disps else 0
+#     if max_lateral_minor > 1e-6: 
+#         print(rf"✓ Minor {max_lateral_minor}")
+#     else: 
+#         print(f"✗ Minor {max_lateral_minor}")
     
-    # Maximum torsional rotation 
-    torsional_rots = [abs(mode_data.get((node, 3), 0)) for node in range(n+1)]
-    max_torsion = max(torsional_rots) if torsional_rots else 0
-    
-    if max_lateral_disp > 1e-6 and max_torsion > 1e-6:
-        print(f"✓ Mode {mode+1} exhibits characteristics of lateral torsional buckling")
-    else:
-        print(f"✗ Mode {mode+1} does not appear to be a lateral torsional buckling mode")
+#     # Maximum torsional rotation 
+#     torsional_rots = [abs(mode_data.get((node, 3), 0)) for node in range(n+1)]
+#     max_torsion = max(torsional_rots) if torsional_rots else 0
+#     if max_torsion > 1e-6: 
+#         print(f"✓ Torsion {max_torsion}")
+#     else: 
+#         print(f"✗ Torsion {max_torsion}")
 
-# # Visualization of the critical buckling mode 
-# beam.show_mode_shapes(scale=10)
+#     print()
+
+    # # Visualization of the critical buckling mode 
+    # beam.show_mode_shape(mode_data, scale=10)

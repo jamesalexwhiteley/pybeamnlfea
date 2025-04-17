@@ -25,7 +25,8 @@ class Frame:
         self.materials: Dict[str, Material] = {}
         self.sections: Dict[str, Section] = {}
         self.boundary_conditions: Dict[int, BoundaryCondition] = {}
-        self.loads: Dict[int, Load] = {}  
+        self.loads: Dict[int, Load] = {} 
+        self.self_weight: float = 0 
         
     def add_node(self, x: float, y: float, z: float, node_id: int = None) -> Node:
         """Add a node to the frame."""
@@ -183,6 +184,22 @@ class Frame:
         else:
             self.loads[node_j_id] = NodalLoad(node_j_id, global_force_j)
 
+
+    def get_self_weight(self) -> float: 
+            """
+            Return self weight of frame object. 
+            """
+            if self.self_weight == 0: 
+                for element_id in self.elements:
+                
+                    # Weight of element -> gravity load 
+                    element = self.elements[element_id]
+                    vol = element.section.A * element.L 
+                    weight = 9.81 * vol * element.material.density 
+                    self.self_weight += weight
+                
+            return self.self_weight
+
     def add_gravity_load(self, scale_factor: List[float]=[0, 0, -1]) -> None:
         """
         Add a uniform load to an element in its local coordinate system equivalent to self weight under gravity.
@@ -192,14 +209,16 @@ class Frame:
             scale_factor: [wx, wy, wz] scale in local coordinates (force per unit length)
 
         """
+        self.self_weight = 0 
         for element_id in self.elements:
             
             # Weight of element -> gravity load 
             element = self.elements[element_id]
             vol = element.section.A * element.L 
-            force = 9.81 * vol * element.material.density 
+            weight = 9.81 * vol * element.material.density 
+            self.self_weight += weight
         
-            self.add_uniform_load(element_id, np.array(scale_factor) * force, UniformLoad) 
+            self.add_uniform_load(element_id, np.array(scale_factor) * weight, UniformLoad) 
 
     def solve(self, solver_type: str='direct') -> Results:
         """
@@ -231,7 +250,6 @@ class Frame:
     def show(self, scale: float=1.0, show_undeformed: bool=True) -> None:
         """
         Plot the deformed shape of the frame.
-        
         """
         if self.results is None:
             print("Model has not been solved yet. Solving with default settings...")
@@ -241,11 +259,17 @@ class Frame:
             scale=scale, 
             show_undeformed=show_undeformed
         )
+
+    def show_mode_shape(self, mode, scale: float=1.0, show_undeformed: bool=True) -> None: 
+        """
+        Plot the deformed mode shape.
+        """
+        results = Results(self.assembler, mode)
+        results.plot_deformed_shape(scale=scale, show_undeformed=show_undeformed)
     
     def show_mode_shapes(self, scale: float=1.0, show_undeformed: bool=True) -> None:
         """
-        Plot the deformed shape of the frame.
-        
+        Plot the deformed mode shapes.
         """
         if self.buckling_modes is None:
             print("Eigen has not been solved yet. Solving with default settings...")
@@ -253,5 +277,4 @@ class Frame:
         
         for i, (mode, load_factor) in enumerate(zip(self.buckling_modes, self.critical_loads)):
             print(f"Mode {i+1}: Critical load factor = {load_factor}")
-            results = Results(self.assembler, mode)
-            results.plot_deformed_shape(scale=scale, show_undeformed=show_undeformed)
+            self.show_mode_shape(mode, scale=scale, show_undeformed=show_undeformed)
