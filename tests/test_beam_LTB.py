@@ -9,7 +9,7 @@ from pybeamnlfea.model.load import UniformLoad, NodalLoad
 
 # Create a beam structure 
 n = 20
-L = 20 # m 
+L = 10 # m 
 beam = Frame() 
 beam.add_nodes([[i*L/n, 0, 0] for i in range(n+1)])
     
@@ -33,33 +33,31 @@ beam.add_section("UB127x76x13", Section(A=A, Iy=Iy, Iz=Iz, J=J, Iw=Iw, y0=0, z0=
 beam.add_elements([[i, i+1] for i in range(n)], "steel", "UB127x76x13", element_class=ThinWalledBeamElement) 
 
 # Add boundary conditions 
-beam.add_boundary_condition(0, [0, 0, 0, 0, 1, 1, 1], BoundaryCondition) 
-beam.add_boundary_condition(n, [1, 0, 0, 1, 1, 1, 1], BoundaryCondition) 
+# beam.add_boundary_condition(0, [0, 0, 0, 0, 0, 0, 0], BoundaryCondition) 
+beam.add_boundary_condition(0, [0, 0, 0, 0, 1, 1, 0], BoundaryCondition) 
+beam.add_boundary_condition(n, [1, 0, 0, 1, 1, 1, 0], BoundaryCondition) 
 
 # Add load
-# beam.add_gravity_load([0, 0, -1])
-# w = beam.get_self_weight()
-for i in range(n): 
-    beam.add_uniform_load(i, [0, 1e-6, -1], UniformLoad)
-w = 1.0
+beam.add_gravity_load([0, 1e-6, 1])
+w = beam.get_self_weight()
+# for i in range(n): 
+#     beam.add_uniform_load(i, [0, 0, 1], UniformLoad)
+# w = 1.0 * L
 
 # # Linear analysis 
-# beam.solve() 
-# beam.show(scale=1000) 
+# results = beam.solve()
+# print(results.get_nodal_displacements(10))
+# beam.show(scale=1) 
 
 # Run eigenvalue buckling analysis 
-print("Running eigenvalue buckling analysis...")
+print("Running eigenvalue buckling analysis...") 
 eigenvalues, eigenvectors = beam.solve_eigen(num_modes=5) 
-print("Buckling eigenvalues (load factors):")
+print("Buckling eigenvalues (load factors):") 
 for i, val in enumerate(eigenvalues):
     coeff = val * w / ((G * J * E * Iy)**0.5 / L**3)
-    print(f"Mode {i+1}: wcr={w * val} coeff={coeff}")
+    print(f"Mode {i+1}: wcr={w * val} coeff={coeff}") # wcr = 28.5 (Stratford and Burgoyne)
 
-# print(f"w_crit = {coeff * (G * J * E * Iy)**0.5 / L**3}")
-
-# TODO test linear deflection results against prediction from simple formula 
-# TODO compare w crit to Stratford and Burgoyne 
-# TODO visualise torsion? 
+# NOTE check analytic buckling for simple case, e.g., Mcr = (π/L) * √(EIz * GJ) * √(1 + (π²*EIw)/(GJ*L²))
 
 # print("\nAnalyzing buckling modes to identify LTB:")
 # for mode in range(len(eigenvalues)):

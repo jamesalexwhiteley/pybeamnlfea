@@ -153,14 +153,14 @@ class Frame:
         
         # Transverse loads - create both forces and moments
         # wy load (local y-direction)
-        local_force_i[1] = -wy * length / 2
-        local_force_j[1] = -wy * length / 2
-        local_force_i[5] = -wy * length**2 / 12   # Mz at node i
-        local_force_j[5] =  wy * length**2 / 12   # Mz at node j
+        local_force_i[1] =  wy * length / 2 
+        local_force_j[1] =  wy * length / 2 
+        local_force_i[5] = -wy * length**2 / 12   # Mz at node i 
+        local_force_j[5] =  wy * length**2 / 12   # Mz at node j 
         
         # wz load (local z-direction)
-        local_force_i[2] = -wz * length / 2
-        local_force_j[2] = -wz * length / 2
+        local_force_i[2] =  wz * length / 2
+        local_force_j[2] =  wz * length / 2
         local_force_i[4] = -wz * length**2 / 12   # My at node i
         local_force_j[4] =  wz * length**2 / 12   # My at node j
         
@@ -184,7 +184,6 @@ class Frame:
         else:
             self.loads[node_j_id] = NodalLoad(node_j_id, global_force_j)
 
-
     def get_self_weight(self) -> float: 
             """
             Return self weight of frame object. 
@@ -200,7 +199,7 @@ class Frame:
                 
             return self.self_weight
 
-    def add_gravity_load(self, scale_factor: List[float]=[0, 0, -1]) -> None:
+    def add_gravity_load(self, scale_factor: List[float]=[0, 0, 1]) -> None:
         """
         Add a uniform load to an element in its local coordinate system equivalent to self weight under gravity.
         
@@ -218,7 +217,7 @@ class Frame:
             weight = 9.81 * vol * element.material.density 
             self.self_weight += weight
         
-            self.add_uniform_load(element_id, np.array(scale_factor) * weight, UniformLoad) 
+            self.add_uniform_load(element_id, np.array(scale_factor) * (weight / element.L), UniformLoad) 
 
     def solve(self, solver_type: str='direct') -> Results:
         """
