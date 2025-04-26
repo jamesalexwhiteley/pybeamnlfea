@@ -34,13 +34,13 @@ beam.add_boundary_condition(0, [0, 0, 0, 0, 0, 0, 1], BoundaryCondition)
 beam.add_boundary_condition(nelems, [0, 0, 0, 0, 0, 0, 1], BoundaryCondition) 
 
 # Add gravity load 
-beam.add_gravity_load([0, 0, -1])
+beam.add_gravity_load([0, 0, 0.1])
 
 # Solve the model
 results = beam.solve() 
 beam.show() 
 
 # Linear buckling analysis 
-beam.solve_eigen(num_modes=15)
-beam.show_mode_shapes(scale=2.0)
+beam.solve_eigen(num_modes=10)
+beam.show_mode_shapes(scale=1.0)
 
