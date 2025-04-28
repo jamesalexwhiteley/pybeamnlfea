@@ -28,4 +28,4 @@ beam.add_nodal_load(n, [0, 0, -1, 0, 0, 0, 0], NodalLoad)
 # Solve the model
 results = beam.solve() 
 print(results.get_nodal_forces(0))
-results = beam.show() 
+beam.show() 

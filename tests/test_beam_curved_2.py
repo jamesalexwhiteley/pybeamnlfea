@@ -11,7 +11,7 @@ from pybeamnlfea.model.load import NodalLoad
 # Create a beam structure 
 beam = Frame() 
 
-nelems = 20
+nelems = 10
 radius = 1 
 theta_max = np.pi 
 nodes = []

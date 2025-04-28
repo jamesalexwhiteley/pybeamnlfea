@@ -57,7 +57,7 @@ print(f"Numerical eigenvalues (critical load factors):")
 for i in range(len(eigenvalues)):
     print(f"Mode {i+1}: Critical load = {eigenvalues[i]:.4e} N")
     mode_shape = eigenvectors[i]
-    # Uncomment to visualize
+    # Uncomment to visualise
     # beam.show_mode_shape(mode_shape, scale=1)
 
 print("\nAnalytical buckling loads:")

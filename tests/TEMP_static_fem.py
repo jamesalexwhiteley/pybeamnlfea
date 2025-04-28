@@ -412,7 +412,7 @@ class ThinWalledFrame3D:
         scale: Scale factor for the deformation
         npoints: Number of points to use for interpolation along each element
         figsize: Figure size
-        show_warping: Whether to visualize warping effects with color
+        show_warping: Whether to visualise warping effects with color
         """
         fig = plt.figure(figsize=figsize)
         ax = fig.add_subplot(111, projection='3d')
@@ -462,7 +462,7 @@ class ThinWalledFrame3D:
 
             # Plot the deformed shape
             if show_warping:
-                # Use a colormap to visualize warping
+                # Use a colormap to visualise warping
                 points = np.array([xyz_def[:-1, 0], xyz_def[:-1, 1], xyz_def[:-1, 2]]).T
                 segments = np.array([xyz_def[:-1], xyz_def[1:]]).transpose((1, 0, 2))
                 for i in range(npoints):

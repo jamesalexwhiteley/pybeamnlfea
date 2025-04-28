@@ -12,6 +12,7 @@ from pybeamnlfea.solver.assembly import Assembler
 from pybeamnlfea.solver.linear import LinearSolver 
 from pybeamnlfea.solver.eigen import EigenSolver 
 from pybeamnlfea.postprocess.results import Results
+from pybeamnlfea.postprocess.visualiser import Visualiser
 
 # Author: James Whiteley (github.com/jamesalexwhiteley)
 
@@ -246,7 +247,7 @@ class Frame:
     
         return self.critical_loads, self.buckling_modes 
     
-    def show(self, scale: float=1.0, show_undeformed: bool=True) -> None:
+    def show(self, scale: float=1.0, show_undeformed: bool=True, show_local_axes: bool=True) -> None:
         """
         Plot the deformed shape of the frame.
         """
@@ -254,17 +255,27 @@ class Frame:
             print("Model has not been solved yet. Solving with default settings...")
             self.solve()
         
-        self.results.plot_deformed_shape(
+        visualiser = Visualiser(self, self.results)
+        visualiser.plot_deformed_shape(
             scale=scale, 
-            show_undeformed=show_undeformed
+            show_undeformed=show_undeformed,
+            show_local_axes=show_local_axes
         )
+        visualiser.show()
 
-    def show_mode_shape(self, mode, scale: float=1.0, show_undeformed: bool=True) -> None: 
+    def show_mode_shape(self, mode, scale: float=1.0, show_undeformed: bool=True, show_local_axes: bool=True) -> None: 
         """
         Plot the deformed mode shape.
         """
         results = Results(self.assembler, mode)
-        results.plot_deformed_shape(scale=scale, show_undeformed=show_undeformed)
+        
+        visualiser = Visualiser(self, results)
+        visualiser.plot_deformed_shape(
+            scale=scale, 
+            show_undeformed=show_undeformed,
+            show_local_axes=show_local_axes
+        )
+        visualiser.show()
     
     def show_mode_shapes(self, scale: float=1.0, show_undeformed: bool=True) -> None:
         """

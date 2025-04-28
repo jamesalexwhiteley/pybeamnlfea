@@ -79,13 +79,15 @@ class Results:
 
         return (u_xl, v_yl, w_zl, rx_xl, phi_xl)
     
-    def plot_deformed_shape(self, scale=1.0, npoints=20, figsize=(10, 8), show_undeformed=True, show_node_id=True):
+    def plot_deformed_shape(self, scale=1.0, npoints=20, figsize=(10, 8), show_undeformed=True, show_node_id=True, ax=None, fig=None):
         """
         Plot the deformed shape of the structure
         
         """
-        fig = plt.figure(figsize=figsize)
-        ax = fig.add_subplot(111, projection='3d')
+        if fig is None or ax is None:
+            fig = plt.figure(figsize=figsize)
+            ax = fig.add_subplot(111, projection='3d')
+
         plotted_nodes = set()
         
         for _, element in self.frame.elements.items():
@@ -162,11 +164,8 @@ class Results:
         ax.yaxis.pane.set_edgecolor('w')
         ax.zaxis.pane.set_edgecolor('w')
 
-        # plt.axis('off') 
         plt.gca().set_aspect('equal', adjustable='box')    
-        # ax.set_box_aspect([1, 1, 1])        
         plt.tight_layout()
-        plt.show()
         
         return fig, ax
     
