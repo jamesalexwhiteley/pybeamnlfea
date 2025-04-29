@@ -28,6 +28,7 @@ class Frame:
         self.boundary_conditions: Dict[int, BoundaryCondition] = {}
         self.loads: Dict[int, Load] = {} 
         self.self_weight: float = 0 
+        self.results = None
         
     def add_node(self, x: float, y: float, z: float, node_id: int = None) -> Node:
         """Add a node to the frame."""
@@ -200,13 +201,13 @@ class Frame:
                 
             return self.self_weight
 
-    def add_gravity_load(self, scale_factor: List[float]=[0, 0, 1]) -> None:
+    def add_gravity_load(self, scale: List[float]=[0, 0, 1]) -> None:
         """
         Add a uniform load to an element in its local coordinate system equivalent to self weight under gravity.
         
         Args:
             element_id: Element to apply the load to
-            scale_factor: [wx, wy, wz] scale in local coordinates (force per unit length)
+            scale: [wx, wy, wz] scale in local coordinates (force per unit length)
 
         """
         self.self_weight = 0 
@@ -218,7 +219,41 @@ class Frame:
             weight = 9.81 * vol * element.material.density 
             self.self_weight += weight
         
-            self.add_uniform_load(element_id, np.array(scale_factor) * (weight / element.L), UniformLoad) 
+            self.add_uniform_load(element_id, np.array(scale) * (weight / element.L), UniformLoad) 
+
+    def update_state(self, global_displacements):
+        """
+        Update the deformed state of the entire frame.
+        
+        Args:
+            global_displacements: Dictionary mapping node IDs to displacements
+        """
+        if isinstance(global_displacements, dict):
+            nodal_displacements = global_displacements
+        else:
+            raise ValueError("global_displacements must be dictionary of form (node_id, dof): value")
+        
+        # Update each element's state
+        for elem_id, element in self.elements.items():
+            # Get element nodal displacements 
+            node1_id, node2_id = element.nodes[0].id, element.nodes[1].id
+            disp1 = [nodal_displacements.get((node1_id, i)) for i in range(7)] # [ux,uy,uz,θx,θy,θz,θx'] 
+            disp2 = [nodal_displacements.get((node2_id, i)) for i in range(7)]
+            
+            # Extract translational displacements
+            trans_disp1 = disp1[:3] # [ux,uy,uz]
+            trans_disp2 = disp2[:3]
+            
+            # Update element's state (position and local axes)
+            element.update_state([trans_disp1, trans_disp2])
+
+    def reset_state(self):
+        """Reset the state of all elements to their initial configuration."""
+        for elem_id, element in self.elements.items():
+            element.reset_state()
+            
+        # Clear any stored results
+        self.results = None
 
     def solve(self, solver_type: str='direct') -> Results:
         """
@@ -234,12 +269,11 @@ class Frame:
         
         # Store results 
         self.results = results 
+        self.update_state(nodal_displacements)  
         return results 
     
     def solve_eigen(self, num_modes: int=5) -> Results:
-        """
-        Solve the frame model with a linear EigenSolver and return results.
-        """
+        """Solve the frame model with a linear EigenSolver and return results."""
 
         self.assembler = Assembler(self)
         solver = EigenSolver(num_modes=num_modes)
@@ -248,26 +282,30 @@ class Frame:
         return self.critical_loads, self.buckling_modes 
     
     def show(self, scale: float=1.0, show_undeformed: bool=True, show_local_axes: bool=True) -> None:
-        """
-        Plot the deformed shape of the frame.
-        """
+        """Plot the current step of the frame analysis."""
         if self.results is None:
-            print("Model has not been solved yet. Solving with default settings...")
-            self.solve()
+            visualiser = Visualiser(self) 
+            visualiser.plot_undeformed_model(
+                show_local_axes=show_local_axes
+            )
+            visualiser.show()
         
-        visualiser = Visualiser(self, self.results)
-        visualiser.plot_deformed_shape(
-            scale=scale, 
-            show_undeformed=show_undeformed,
-            show_local_axes=show_local_axes
-        )
-        visualiser.show()
+        else: 
+            visualiser = Visualiser(self, self.results) 
+            visualiser.plot_deformed_shape(
+                scale=scale, 
+                show_undeformed=show_undeformed,
+                show_local_axes=show_local_axes, 
+            )
+            visualiser.show()
 
-    def show_mode_shape(self, mode, scale: float=1.0, show_undeformed: bool=True, show_local_axes: bool=True) -> None: 
+    def show_mode_shape(self, mode, scale: float=1.0, show_undeformed: bool=True, show_local_axes: bool=False) -> None: 
         """
         Plot the deformed mode shape.
         """
+        self.apply_mode_shape_debug(mode, scale_factor=scale)
         results = Results(self.assembler, mode)
+        self.update_state(results.global_displacements)  
         
         visualiser = Visualiser(self, results)
         visualiser.plot_deformed_shape(
@@ -276,7 +314,62 @@ class Frame:
             show_local_axes=show_local_axes
         )
         visualiser.show()
-    
+        self.reset_state()
+
+    def apply_mode_shape_debug(self, mode_vector, scale_factor=1.0):
+        """Apply mode shape with special handling for visualization."""
+        self.reset_state()  # Start from initial state
+        
+        # Create dictionary of displacements
+        displacements = {}
+        
+        # If mode_vector is already a dictionary
+        if isinstance(mode_vector, dict):
+            displacements = mode_vector
+        else:
+            # Convert vector to dictionary
+            for node_id in self.nodes:
+                for dof in range(7):  # 7 DOFs per node
+                    idx = self.assembler.dof_map.get((node_id, dof))
+                    if idx is not None and idx < len(mode_vector):
+                        displacements[(node_id, dof)] = mode_vector[idx]
+        
+        # Extract just translational DOFs to find max displacement
+        trans_disps = [abs(displacements.get((node_id, dof), 0.0)) 
+                    for node_id in self.nodes 
+                    for dof in range(3)]  # First 3 DOFs are translational
+        
+        max_disp = max(trans_disps) if trans_disps else 1.0
+        
+        # Print some diagnostic info
+        print(f"Max displacement magnitude: {max_disp}")
+        for elem_id, element in self.elements.items():
+            node1, node2 = element.nodes
+            disp1 = [displacements.get((node1.id, dof), 0.0) for dof in range(3)]
+            disp2 = [displacements.get((node2.id, dof), 0.0) for dof in range(3)]
+            
+            mag1 = np.linalg.norm(disp1)
+            mag2 = np.linalg.norm(disp2)
+            
+            print(f"Element {elem_id}: Node {node1.id} disp mag: {mag1}, Node {node2.id} disp mag: {mag2}")
+            
+            # Apply minimum displacement for visualization if too small relative to max
+            min_ratio = 1e-8
+            if max_disp > 0 and (mag1 / max_disp < min_ratio or mag2 / max_disp < min_ratio):
+                # This element has negligible displacement - artificially add a small amount
+                for i in range(3):
+                    if abs(disp1[i]) / max_disp < min_ratio:
+                        displacements[(node1.id, i)] = min_ratio * max_disp * np.sign(disp1[i] or 1.0)
+                    if abs(disp2[i]) / max_disp < min_ratio:
+                        displacements[(node2.id, i)] = min_ratio * max_disp * np.sign(disp2[i] or 1.0)
+                
+                print(f"  - Applied minimum displacement for visualization")
+        
+        # Now update the state with possibly modified displacements
+        self.update_state(displacements)
+        
+        return displacements
+        
     def show_mode_shapes(self, scale: float=1.0, show_undeformed: bool=True) -> None:
         """
         Plot the deformed mode shapes.

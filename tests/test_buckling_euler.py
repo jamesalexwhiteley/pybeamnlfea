@@ -9,7 +9,7 @@ import numpy as np
 # Author: James Whiteley (github.com/jamesalexwhiteley) 
 
 # Create a beam structure 
-n = 10
+n = 6
 L = 10
 beam = Frame() 
 beam.add_nodes([[L*i/n, 0, 0] for i in range(n+1)])
@@ -43,5 +43,7 @@ eigenvalues, eigenvectors = beam.solve_eigen(num_modes=5)
 for n in range(len(eigenvalues)):
     print(f"Mode {n+1}: Critical load factor = {eigenvalues[n]:.4e} | Analytic solution (Euler critical load) = {(n+1)**2 * np.pi**2 / L**2 * E * min(Iz,Iy):.4e}")
     mode_shape = eigenvectors[n]
-    beam.show_mode_shape(mode_shape, scale=1)
+    beam.show_mode_shape(mode_shape, scale=3)
+
+    # TODO fix mode shape shape 
 

@@ -21,10 +21,21 @@ class Element:
 class ThinWalledBeamElement(Element):
     def __init__(self, id: int, nodes: Node, material: Material, section: Section): 
         self.id = id 
-        self.nodes = nodes
         self.material = material
         self.section = section
-        self.local_axes = self._initialise_local_axes()
+
+        # Initial state 
+        self.nodes = nodes  
+        self._initialise_local_axes() 
+        self.initial_state = {
+            'coords': [node.coords.copy() for node in nodes],
+            'R': self.R.copy(),
+            'L': self.L
+        }
+        
+        # Need to track deformation steps as analysis progresses 
+        self.current_state = self.initial_state.copy()
+        self.previous_state = self.initial_state.copy()
 
     def __repr__(self) -> str:
         """String representation of the element."""
@@ -209,12 +220,110 @@ class ThinWalledBeamElement(Element):
         return C
 
     def compute_transformation_matrix(self):
-        """
-        Compute the transformation matrix T = (CQC^-1)^-1 
-        """
+        """Compute the transformation matrix T = (CQC^-1)^-1."""
         # C = self.compute_controid_transformation_matrix()
         # Q = self.compute_local_to_global_transformation_matrix()
         # self.T = np.linalg.inv(C @ Q @ np.linalg.inv(C))   
         self.T = self.compute_local_to_global_transformation_matrix()                       # NOTE                  
  
         return self.T
+    
+    def update_state(self, displacements):
+        """
+        Update the current state (position and local axes) based on element nodal displacements,
+        using Rodrigues' rotation formula to handle rotations.
+        
+        Args:
+            displacements: List of displacement vectors [u1, u2] for nodes
+        """
+        # 0. Store the previous state 
+        self.previous_state = self.current_state.copy()
+
+        # 1. Update nodal positions
+        self.current_coords = [
+            self.nodes[0].coords + displacements[0],
+            self.nodes[1].coords + displacements[1]
+        ]
+        
+        # 2. Get new tangent vector 
+        delta = self.current_coords[1] - self.current_coords[0]
+        self.current_L = np.linalg.norm(delta)
+        c_new = delta / self.current_L  
+        
+        # 3. Get previous tangent vector 
+        c_old = self.R[0, :] # First row is x-axis (tangent)
+        
+        # 4. Calculate rotation axis (omega)
+        omega = np.cross(c_old, c_new)
+        omega_norm = np.linalg.norm(omega)
+        
+        # Handle special case - vectors parallel 
+        if omega_norm < 1e-10:
+            if np.dot(c_old, c_new) > 0:
+                # Same direction
+                self.current_R = self.R.copy()
+                return
+            else:
+                # Opposite direction (180 rotation)
+                # Find perpendicular vector to use as rotation axis
+                if abs(c_old[0]) < abs(c_old[1]):
+                    omega = np.array([0, c_old[2], -c_old[1]])
+                else:
+                    omega = np.array([c_old[2], 0, -c_old[0]])
+                omega = omega / np.linalg.norm(omega)
+                theta = np.pi # 180 degrees
+        else:
+            # Normal case
+            omega = omega / omega_norm # Normalize rotation axis
+            # 5. Calculate rotation angle
+            cos_theta = np.clip(np.dot(c_old, c_new), -1.0, 1.0) # Handle numerical issues
+            theta = np.arccos(cos_theta)
+        
+        # 6. Skew-symmetric matrix
+        omega_skew = np.array([
+            [0, -omega[2], omega[1]],
+            [omega[2], 0, -omega[0]],
+            [-omega[1], omega[0], 0]
+        ])
+        
+        # 7. Rotation matrix using Rodrigues formula
+        A = np.eye(3) + np.sin(theta) * omega_skew + (1 - np.cos(theta)) * (omega_skew @ omega_skew)
+        
+        # 8 & 9. Update local coordinate system
+        self.current_R = np.zeros_like(self.R)
+        self.current_R[0, :] = c_new
+        self.current_R[1, :] = A @ self.R[1, :]  # Rotate y-axis
+        self.current_R[2, :] = A @ self.R[2, :]  # Rotate z-axis
+        
+        # 10. Re-orthogonalize 
+        x_local = self.current_R[0, :]
+        
+        # Adjust y-axis to be perpendicular to x-axis
+        y_temp = self.current_R[1, :]
+        y_local = y_temp - np.dot(y_temp, x_local) * x_local
+        y_local = y_local / np.linalg.norm(y_local)
+        
+        # z-axis completes the orthogonal system
+        z_local = np.cross(x_local, y_local)
+        z_local = z_local / np.linalg.norm(z_local)
+        
+        # Updated local coordinate system
+        self.current_R[0, :] = x_local
+        self.current_R[1, :] = y_local
+        self.current_R[2, :] = z_local
+
+        self.current_state = {
+            'coords': [coord.copy() for coord in self.current_coords],
+            'R': self.current_R.copy(),
+            'L': self.current_L
+        }
+
+    def reset_state(self):
+        """Reset (current and previous state) to initial state."""
+        self.current_state = self.initial_state.copy()
+        self.previous_state = self.initial_state.copy()
+        
+        # Also reset any other state variables
+        self.current_coords = [node.coords.copy() for node in self.nodes]
+        self.current_R = self.R.copy()
+        self.current_L = self.L

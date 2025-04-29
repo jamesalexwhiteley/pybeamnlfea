@@ -430,7 +430,7 @@ class ThinWalledFrame3D:
             if L < 1e-14:
                 continue
 
-            # Plot undeformed configuration
+            # Plot show_undeformed configuration
             ax.plot([x1, x2], [y1, y2], [z1, z2], 'k--', lw=0.5)
 
             # Get the rotation matrix

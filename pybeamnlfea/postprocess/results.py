@@ -69,7 +69,7 @@ class Results:
         v_yl = H1*v1 + H2*v2 + H3*rz1 + H4*rz2
 
         # Bending about y_l (w displacement)
-        w_zl = H1*w1 + H2*w2 - H3*ry1 - H4*ry2  # Note negative signs for right-hand rule
+        w_zl = H1*w1 + H2*w2 - H3*ry1 - H4*ry2  # Negative signs for right-hand rule
 
         # Linear interpolation for torsion rotation
         rx_xl = Nx1*rx1 + Nx2*rx2
@@ -79,100 +79,9 @@ class Results:
 
         return (u_xl, v_yl, w_zl, rx_xl, phi_xl)
     
-    def plot_deformed_shape(self, scale=1.0, npoints=20, figsize=(10, 8), show_undeformed=True, show_node_id=True, ax=None, fig=None):
-        """
-        Plot the deformed shape of the structure
-        
-        """
-        if fig is None or ax is None:
-            fig = plt.figure(figsize=figsize)
-            ax = fig.add_subplot(111, projection='3d')
-
-        plotted_nodes = set()
-        
-        for _, element in self.frame.elements.items():
-
-            # Get node coordinates
-            start_node, end_node = element.nodes
-            start_pos = start_node.coords
-            end_pos = end_node.coords
-            
-            # Element direction and length
-            element_dir = end_pos - start_pos
-            L = np.linalg.norm(element_dir)
-            
-            if L < 1e-14:
-                continue
-
-            # Plot undeformed configuration
-            if show_undeformed:
-                ax.plot([start_pos[0], end_pos[0]], 
-                        [start_pos[1], end_pos[1]], 
-                        [start_pos[2], end_pos[2]], 'k--', lw=0.5)
-            
-            # Extract local DOFs
-            dof_loc = self.extract_local_dofs(element, element.R)
-
-            # Interpolate along the element
-            xyz_def = np.zeros((npoints+1, 3))
-                
-            for i in range(npoints+1):
-                xi = i / npoints
-                (u_xl, v_yl, w_zl, rx_xl, _) = self.shape_thin_walled_beam(xi, L, dof_loc)
-                    
-                # Local displacement vector
-                disp_loc = np.array([u_xl, v_yl, w_zl])
-                disp_g = element.R @ disp_loc
-                
-                # Base point along undeformed element
-                base = start_pos + xi * element_dir
-                
-                # Apply displacement
-                xyz_def[i] = base + scale*disp_g
-
-            ax.plot(xyz_def[:, 0], xyz_def[:, 1], xyz_def[:, 2], 'b-', lw=1.5)
-                
-            # Plot the deformed endpoints
-            ax.scatter(xyz_def[0, 0], xyz_def[0, 1], xyz_def[0, 2], color='b', s=25)
-            ax.scatter(xyz_def[-1, 0], xyz_def[-1, 1], xyz_def[-1, 2], color='b', s=25)
-
-            if show_node_id:
-                # Start node
-                if start_node.id not in plotted_nodes:
-                    ax.text(xyz_def[0, 0], xyz_def[0, 1], xyz_def[0, 2], 
-                            f' {start_node.id}', fontsize=8, ha='left', va='bottom')
-                    plotted_nodes.add(start_node.id)
-                
-                # End node
-                if end_node.id not in plotted_nodes:
-                    ax.text(xyz_def[-1, 0], xyz_def[-1, 1], xyz_def[-1, 2], 
-                            f' {end_node.id}', fontsize=8, ha='left', va='bottom')
-                    plotted_nodes.add(end_node.id)
-
-        # Configure the plot
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.set_zlabel('Z')
-        
-        # Remove background
-        ax.xaxis.pane.fill = False
-        ax.yaxis.pane.fill = False
-        ax.zaxis.pane.fill = False
-
-        # Make transparent
-        ax.xaxis.pane.set_edgecolor('w')
-        ax.yaxis.pane.set_edgecolor('w')
-        ax.zaxis.pane.set_edgecolor('w')
-
-        plt.gca().set_aspect('equal', adjustable='box')    
-        plt.tight_layout()
-        
-        return fig, ax
-    
     def get_nodal_displacements(self, node_id, dof_idx=None, coordinate_system='global'):
         """
         Get displacement for a specific node.
-        
         """
         if coordinate_system == 'global':
             if dof_idx is not None:
@@ -190,7 +99,6 @@ class Results:
     def get_nodal_forces(self, node_id, dof_idx=None, coordinate_system='global'):
         """
         Get forces for a specific node.
-        
         """
         if coordinate_system == 'global':
             if dof_idx is not None:

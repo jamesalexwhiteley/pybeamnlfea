@@ -1,5 +1,5 @@
 import numpy as np 
-from pybeamnlfea.solvers.linear import Solver 
+from pybeamnlfea.solver.linear import Solver 
 
 # Author: James Whiteley (github.com/jamesalexwhiteley)
 
@@ -11,4 +11,7 @@ class NewtonRaphsonSolver(Solver):
 
     def solve(self, assembler):
         pass
+
+    # Current forces in elements based on total displacement (not incremental) F(q)
+    # Tangent stiffness at the current state Ktot
     
