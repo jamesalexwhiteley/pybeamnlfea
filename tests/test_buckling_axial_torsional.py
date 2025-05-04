@@ -4,66 +4,86 @@ from pybeamnlfea.model.section import Section
 from pybeamnlfea.model.element import ThinWalledBeamElement 
 from pybeamnlfea.model.boundary import BoundaryCondition 
 from pybeamnlfea.model.load import NodalLoad 
-import numpy as np
+import numpy as np 
 
-# Create a beam structure for axial-torsional buckling analysis
-n = 20  # Number of elements
-L = 5.0  # m - beam length
+# Author: James Whiteley (github.com/jamesalexwhiteley) 
+
+# ======== Torsional displacement ======== #
+# Column 
+n = 10 
+L = 3.0
 beam = Frame() 
 beam.add_nodes([[i*L/n, 0, 0] for i in range(n+1)])
 
-# Material properties - steel
-E = 210e9   # N/m2 - Young's modulus
-G = 80e9    # N/m2 - Shear modulus
-rho = 7850  # kg/m3 - Density
+# Material: steel
+E = 210e9   # N/m2
+G = 80e9    # N/m2 
+rho = 7850  # kg/m3
 
-# Section properties for UB127x76x13
-A = 1650e-6    # m2 - Cross-sectional area
-Iy = 0.746e-6  # m4 - Strong axis moment of inertia
-Iz = 0.147e-6  # m4 - Weak axis moment of inertia
-J = 0.0285e-6  # m4 - Torsional constant
-Iw = 0.002e-12 # m6 - Warping constant
+# UB127x76x13 section 
+A = 1650e-6    # m2
+Iy = 0.746e-6  # m4
+Iz = 0.147e-6  # m4
+J = 0.0285e-6  # m4
+Iw = 0.002e-12 # m6
 
 beam.add_material("steel", LinearElastic(rho=rho, E=E, G=G))
 beam.add_section("UB127x76x13", Section(A=A, Iy=Iy, Iz=Iz, J=J, Iw=Iw, y0=0, z0=0))
+beam.add_elements([[i, i+1] for i in range(n)], "steel", "UB127x76x13", element_class=ThinWalledBeamElement)
 
-# Add elements
-beam.add_elements([[i, i+1] for i in range(n)], "steel", "UB127x76x13", element_class=ThinWalledBeamElement) 
+beam.add_boundary_condition(0, [0, 0, 0, 0, 0, 0, 0], BoundaryCondition) # Fixed 
+beam.add_boundary_condition(n, [1, 1, 1, 1, 1, 1, 1], BoundaryCondition) # Free 
 
-# Boundary conditions for axial-torsional buckling
-# Pin-ended conditions: restrain translations at both ends, but allow rotation
-# At x=0: Fix all translations, allow all rotations
-beam.add_boundary_condition(0, [0, 0, 0, 0, 1, 1, 1], BoundaryCondition)
-# At x=L: Fix y and z translations, allow x-translation and all rotations
-beam.add_boundary_condition(n, [1, 0, 0, 1, 1, 1, 1], BoundaryCondition)
+# Apply torque
+T = 1
+beam.add_nodal_load(n, [0, 0, 0, T, 0, 0, 0], NodalLoad)
 
-# Apply axial compressive load at the free end
-P = 1.0  # Reference load (will be scaled by eigenvalue)
-beam.add_nodal_load(n, [-P, 0, 0, 0, 0, 0, 0], NodalLoad)  # Negative for compression
+# Solve and show deformed model 
+results = beam.solve() 
+# beam.show(scale=2e2, show_undeformed=True, show_local_axes=False)
 
-# Linear buckling analysis 
-eigenvalues, eigenvectors = beam.solve_eigen(num_modes=10) 
+# check torsional displacement 
+torsional_disp = results.get_nodal_displacements(node_id=n, dof_idx=3)
+analytic_torsional_disp = T * L / (G * J)
+relative_error = abs(torsional_disp - analytic_torsional_disp) / analytic_torsional_disp * 100
+print(f"Precentage error in torsional displacement: {relative_error:.2f}%")
 
-# Calculate analytical solutions for comparison
-# For a pin-ended column, the Euler buckling load is:
-P_euler_y = np.pi**2 * E * Iy / L**2  # Buckling about y-axis (strong)
-P_euler_z = np.pi**2 * E * Iz / L**2  # Buckling about z-axis (weak)
+# ======== Axial-torsional buckling ======== #
+# Cruciform column 
+b = 0.076 # flange width (m)
+t = 0.007 # flange thickness (m)
 
-# For torsional buckling of a doubly symmetric section:
-P_torsional = (1/A) * (G*J + np.pi**2*E*Iw/L**2)
+# Section properties 
+A = 4 * b * t   
+Iy = (2 * b * t**3) / 12 + (2 * t * b**3) / 12  
+Iz = 1e20 * Iy # NOTE set I >> J
+J = (4 * b * t**3) / 3  
+Iw = 0 # assumed 
 
-# Display results
-print(f"Numerical eigenvalues (critical load factors):")
+# Create beam model 
+beam = Frame() 
+beam.add_nodes([[i*L/n, 0, 0] for i in range(n+1)])
+
+beam.add_material("steel", LinearElastic(rho=rho, E=E, G=G))
+beam.add_section("cruciform", Section(A=A, Iy=Iy, Iz=Iz, J=J, Iw=Iw, y0=0, z0=0))
+beam.add_elements([[i, i+1] for i in range(n)], "steel", "cruciform", element_class=ThinWalledBeamElement)
+
+# Add boundary conditions
+beam.add_boundary_condition(0, [0, 0, 0, 0, 0, 0, 0], BoundaryCondition) # Fixed 
+beam.add_boundary_condition(n, [1, 1, 1, 1, 1, 1, 1], BoundaryCondition) # Free 
+
+# Apply end load
+P = 1e-4 
+beam.add_nodal_load(n, [-P, 0, 0, 1, 0, 0, 0], NodalLoad)
+
+eigenvalues, eigenvectors = beam.solve_eigen(num_modes=1)
 for i in range(len(eigenvalues)):
-    print(f"Mode {i+1}: Critical load = {eigenvalues[i]:.4e} N")
-    mode_shape = eigenvectors[i]
-    # Uncomment to visualise
-    # beam.show_mode_shape(mode_shape, scale=1)
+    beam.show_mode_shape(eigenvectors[i], scale=10) # TODO check we are getting torsional mode 
 
-print("\nAnalytical buckling loads:")
-print(f"Euler buckling load (weak axis): {P_euler_z:.4e} N")
-print(f"Euler buckling load (strong axis): {P_euler_y:.4e} N")
-print(f"Torsional buckling load: {P_torsional:.4e} N")
+# Analytical critical load 
+sigma_cr = G * (t/b)**2  
+P_cr_analytic = sigma_cr * A  
 
-# The lowest eigenvalue should correspond to weak-axis buckling
-print(f"\nRatio (Numerical/Analytical) for first mode: {eigenvalues[0]/min(P_euler_y, P_euler_z, P_torsional):.4f}")
+print(f"\nAnalytical critical torsional buckling load:")
+print(f"P_cr = σ_cr A = G (t/b)^2 A = {P_cr_analytic:.4e} N")
+print(f"Ratio (FEA/Analytic): {eigenvalues[0]/P_cr_analytic:.4f}")
