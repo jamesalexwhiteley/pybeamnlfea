@@ -46,8 +46,6 @@ beam.add_nodal_load(n, [0, Q, -V, T, 0, 0, 0], NodalLoad) # NOTE is global z upd
 results = beam.solve() 
 beam.show(scale=2, show_undeformed=True, show_local_axes=True)
 
-# TODO mode shape visualisation ... buckling verification 
-
 
 # eigenvalues, eigenvectors = beam.solve_eigen(num_modes=3)
 # for i in range(len(eigenvalues)):

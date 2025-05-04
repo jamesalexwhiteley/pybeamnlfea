@@ -9,7 +9,7 @@ import numpy as np
 # Author: James Whiteley (github.com/jamesalexwhiteley) 
 
 # Create a beam structure 
-n = 6
+n = 10
 L = 10
 beam = Frame() 
 beam.add_nodes([[L*i/n, 0, 0] for i in range(n+1)])
@@ -35,15 +35,12 @@ beam.add_elements([[i, i+1] for i in range(n)], "steel", "UB127x76x13", element_
 
 # Add boundary conditions and loads
 beam.add_boundary_condition(0, [0, 0, 0, 0, 1, 1, 0], BoundaryCondition) 
-beam.add_boundary_condition(n, [1, 0, 0, 0, 1, 1, 0], BoundaryCondition) 
+beam.add_boundary_condition(n, [10, 0, 0, 0, 1, 1, 0], BoundaryCondition) 
 beam.add_nodal_load(n, [-1, 0, 0, 0, 0, 0, 0], NodalLoad) 
 
 # Linear buckling analysis 
-eigenvalues, eigenvectors = beam.solve_eigen(num_modes=5) 
+eigenvalues, eigenvectors = beam.solve_eigen(num_modes=4) 
 for n in range(len(eigenvalues)):
     print(f"Mode {n+1}: Critical load factor = {eigenvalues[n]:.4e} | Analytic solution (Euler critical load) = {(n+1)**2 * np.pi**2 / L**2 * E * min(Iz,Iy):.4e}")
     mode_shape = eigenvectors[n]
-    beam.show_mode_shape(mode_shape, scale=3)
-
-    # TODO fix mode shape shape 
-
+    beam.show_mode_shape(mode_shape, scale=5, show_local_axes=True)
