@@ -4,8 +4,7 @@ from pybeamnlfea.model.section import Section
 from pybeamnlfea.model.element import ThinWalledBeamElement 
 from pybeamnlfea.model.boundary import BoundaryCondition 
 from pybeamnlfea.model.load import NodalLoad 
-from pybeamnlfea.postprocess.visualiser import Visualiser
-
+import numpy as np 
 # Author: James Whiteley (github.com/jamesalexwhiteley) 
 
 # Column 
@@ -37,24 +36,25 @@ beam.add_boundary_condition(n, [1, 1, 1, 1, 1, 1, 1], BoundaryCondition)
 T = 1e3
 V = 1e4
 Q = 1e3
-beam.add_nodal_load(n, [0, Q, -V, T, 0, 0, 0], NodalLoad) # NOTE is global z updwards or downwards? Seems nodal load is different to uniform/gravity loads? 
+beam.add_nodal_load(n, [0, 0, 0, T, 0, 0, 0], NodalLoad) # NOTE is global z updwards or downwards? Seems nodal load is different to uniform/gravity loads? 
 
-# # Show show_undeformed model 
-# beam.show(show_local_axes=True)
+# Show show_undeformed model 
+beam.show(show_local_axes=True)
 
 # Solve and show deformed model 
 results = beam.solve() 
 beam.show(scale=2, show_undeformed=True, show_local_axes=True)
 
+eigenvalues, eigenvectors = beam.solve_eigen(num_modes=3)
+for i in range(len(eigenvalues)):
+    beam.show_mode_shape(eigenvectors[i], scale=10)
 
-# eigenvalues, eigenvectors = beam.solve_eigen(num_modes=3)
-# for i in range(len(eigenvalues)):
-#     beam.show_mode_shape(eigenvectors[i], scale=10)
+# TODO visualise torsional displacement  
 
-# # Try different formula interpretations
-# T_cr1 = (np.pi/(2*L)) * np.sqrt(G*J * E*Iw)  # Standard formula
-# T_cr2 = (np.pi**2/(4*L**2)) * E*Iw + G*J  # Alternative formula
+# Try different formula interpretations
+T_cr1 = (np.pi/(2*L)) * np.sqrt(G*J * E*Iw)  # Standard formula
+T_cr2 = (np.pi**2/(4*L**2)) * E*Iw + G*J  # Alternative formula
 
-# print(f"Mode 1: Critical torque = {eigenvalues[0]:.4e} N·m")
-# print(f"Standard formula: {T_cr1:.4e} N·m, Ratio: {eigenvalues[0]/T_cr1:.4f}")
-# print(f"Alternative formula: {T_cr2:.4e} N·m, Ratio: {eigenvalues[0]/T_cr2:.4f}")
+print(f"Mode 1: Critical torque = {eigenvalues[0]:.4e} N·m")
+print(f"Standard formula: {T_cr1:.4e} N·m, Ratio: {eigenvalues[0]/T_cr1:.4f}")
+print(f"Alternative formula: {T_cr2:.4e} N·m, Ratio: {eigenvalues[0]/T_cr2:.4f}")
