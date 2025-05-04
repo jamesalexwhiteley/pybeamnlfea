@@ -5,10 +5,12 @@ from pybeamnlfea.model.element import ThinWalledBeamElement
 from pybeamnlfea.model.boundary import BoundaryCondition 
 from pybeamnlfea.model.load import NodalLoad 
 import numpy as np 
+
 # Author: James Whiteley (github.com/jamesalexwhiteley) 
 
+# ======== Torsional displacement ======== #
 # Column 
-n = 6 # num elements 
+n = 10 
 L = 3.0
 beam = Frame() 
 beam.add_nodes([[i*L/n, 0, 0] for i in range(n+1)])
@@ -29,32 +31,59 @@ beam.add_material("steel", LinearElastic(rho=rho, E=E, G=G))
 beam.add_section("UB127x76x13", Section(A=A, Iy=Iy, Iz=Iz, J=J, Iw=Iw, y0=0, z0=0))
 beam.add_elements([[i, i+1] for i in range(n)], "steel", "UB127x76x13", element_class=ThinWalledBeamElement)
 
-beam.add_boundary_condition(0, [0, 0, 0, 0, 0, 0, 0], BoundaryCondition) 
-beam.add_boundary_condition(n, [1, 1, 1, 1, 1, 1, 1], BoundaryCondition) 
+beam.add_boundary_condition(0, [0, 0, 0, 0, 0, 0, 0], BoundaryCondition) # Fixed 
+beam.add_boundary_condition(n, [1, 1, 1, 1, 1, 1, 1], BoundaryCondition) # Free 
 
 # Apply torque
-T = 1e3
-V = 1e4
-Q = 1e3
-beam.add_nodal_load(n, [0, 0, 0, T, 0, 0, 0], NodalLoad) # NOTE is global z updwards or downwards? Seems nodal load is different to uniform/gravity loads? 
-
-# Show show_undeformed model 
-beam.show(show_local_axes=True)
+T = 1
+beam.add_nodal_load(n, [0, 0, 0, T, 0, 0, 0], NodalLoad)
 
 # Solve and show deformed model 
 results = beam.solve() 
-beam.show(scale=2, show_undeformed=True, show_local_axes=True)
+# beam.show(scale=2e2, show_undeformed=True, show_local_axes=False)
 
-eigenvalues, eigenvectors = beam.solve_eigen(num_modes=3)
+# check torsional displacement 
+torsional_disp = results.get_nodal_displacements(node_id=n, dof_idx=3)
+analytic_torsional_disp = T * L / (G * J)
+relative_error = abs(torsional_disp - analytic_torsional_disp) / analytic_torsional_disp * 100
+print(f"Precentage error in torsional displacement: {relative_error:.2f}%")
+
+# ======== Axial-torsional buckling ======== #
+# Cruciform column 
+b = 0.076 # flange width (m)
+t = 0.007 # flange thickness (m)
+
+# Section properties 
+A = 4 * b * t   
+Iy = (2 * b * t**3) / 12 + (2 * t * b**3) / 12  
+Iz = 1e20 * Iy # NOTE set I >> J
+J = (4 * b * t**3) / 3  
+Iw = 0 # assumed 
+
+# Create beam model 
+beam = Frame() 
+beam.add_nodes([[i*L/n, 0, 0] for i in range(n+1)])
+
+beam.add_material("steel", LinearElastic(rho=rho, E=E, G=G))
+beam.add_section("cruciform", Section(A=A, Iy=Iy, Iz=Iz, J=J, Iw=Iw, y0=0, z0=0))
+beam.add_elements([[i, i+1] for i in range(n)], "steel", "cruciform", element_class=ThinWalledBeamElement)
+
+# Add boundary conditions
+beam.add_boundary_condition(0, [0, 0, 0, 0, 0, 0, 0], BoundaryCondition) # Fixed 
+beam.add_boundary_condition(n, [1, 1, 1, 1, 1, 1, 1], BoundaryCondition) # Free 
+
+# Apply end load
+P = 1  
+beam.add_nodal_load(n, [-P, 0, 0, 1e-6, 0, 0, 0], NodalLoad)
+
+eigenvalues, eigenvectors = beam.solve_eigen(num_modes=5)
 for i in range(len(eigenvalues)):
-    beam.show_mode_shape(eigenvectors[i], scale=10)
+    beam.show_mode_shape(eigenvectors[i], scale=10) # TODO check we are getting torsional mode 
 
-# TODO visualise torsional displacement  
+# Analytical critical load 
+sigma_cr = G * (t/b)**2  
+P_cr_analytic = sigma_cr * A  
 
-# Try different formula interpretations
-T_cr1 = (np.pi/(2*L)) * np.sqrt(G*J * E*Iw)  # Standard formula
-T_cr2 = (np.pi**2/(4*L**2)) * E*Iw + G*J  # Alternative formula
-
-print(f"Mode 1: Critical torque = {eigenvalues[0]:.4e} N·m")
-print(f"Standard formula: {T_cr1:.4e} N·m, Ratio: {eigenvalues[0]/T_cr1:.4f}")
-print(f"Alternative formula: {T_cr2:.4e} N·m, Ratio: {eigenvalues[0]/T_cr2:.4f}")
+print(f"\nAnalytical critical torsional buckling load:")
+print(f"P_cr = σ_cr A = G (t/b)^2 A = {P_cr_analytic:.4e} N")
+print(f"Ratio (FEA/Analytic): {eigenvalues[0]/P_cr_analytic:.4f}")

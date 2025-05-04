@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 # Author: James Whiteley (github.com/jamesalexwhiteley)
 
@@ -116,10 +117,76 @@ class Visualiser:
                           f" {end_node.id}", fontsize=10)
 
         return self.fig, self.ax
+    
 
-    def plot_deformed_shape(self, scale=1.0, show_undeformed=False, npoints=20, show_local_axes=False): 
-        """Visualize the model with properly interpolated deformations using shape functions."""
+    def plot_rectanglular_cross_sections(self, deformed_points, init_R, num_rectangles, torsion_angles, rect_width, rect_height):
+        """Create rectangles at selected points. """
+
+        rect_indices = np.linspace(0, len(deformed_points)-1, num_rectangles, dtype=int)
+        rect_corners_list = []  # Store all rectangle corners for connecting later
         
+        # Create rectangles at selected points
+        for idx in rect_indices:
+            position = deformed_points[idx]
+            angle = torsion_angles[idx]
+            
+            # Create rectangle vertices in the YZ plane (perpendicular to X axis)
+            half_width = rect_width / 2
+            half_height = rect_height / 2
+            
+            # Create rectangle corners in YZ plane (x=0 in local coordinates)
+            rect_corners_local = np.array([
+                [0, -half_width, -half_height],  # Bottom left
+                [0, half_width, -half_height],   # Bottom right
+                [0, half_width, half_height],    # Top right
+                [0, -half_width, half_height]    # Top left
+            ])
+            
+            # Apply torsional rotation (around local X-axis)
+            cos_angle = np.cos(angle)
+            sin_angle = np.sin(angle)
+            
+            # Rotate YZ coordinates
+            rect_corners_rotated = np.array([
+                [0, pt[1]*cos_angle - pt[2]*sin_angle, pt[1]*sin_angle + pt[2]*cos_angle] 
+                for pt in rect_corners_local
+            ])
+            
+            # Transform to global coordinates using the original rotation matrix
+            rect_corners_global = np.array([
+                position + init_R.T @ corner for corner in rect_corners_rotated
+            ])
+            
+            # Store corners for later connecting
+            rect_corners_list.append(rect_corners_global)
+        
+        # Create quad strips between adjacent rectangles
+        for i in range(len(rect_corners_list) - 1):
+            rect1 = rect_corners_list[i]
+            rect2 = rect_corners_list[i+1]
+            
+            # Create four quad faces (one for each side of the prism)
+            for j in range(4):
+                j_next = (j + 1) % 4
+                quad = Poly3DCollection([[
+                    rect1[j], 
+                    rect1[j_next], 
+                    rect2[j_next],
+                    rect2[j]
+                ]], alpha=0.6)
+                
+                # Color based on position along beam
+                color_val = i / (len(rect_corners_list) - 2)
+                color = plt.cm.coolwarm(color_val)
+                
+                quad.set_facecolor(color)
+                quad.set_edgecolor('gray')
+                self.ax.add_collection3d(quad)
+
+    def plot_deformed_shape(self, scale=1.0, show_undeformed=False, npoints=20, show_local_axes=False, 
+                            show_cross_section=True, rect_width=0.05, rect_height=0.1, num_rectangles=5):
+        """Visualize the model."""
+
         if self.model is None or self.results is None:
             raise ValueError("Both model and results must be provided")
         
@@ -152,6 +219,7 @@ class Visualiser:
             # Create points along element for shape function evaluation
             xi_values = np.linspace(0, 1, npoints)
             deformed_points = []
+            torsion_angles = []
             
             for xi in xi_values:
                 # Evaluate shape functions
@@ -169,11 +237,14 @@ class Visualiser:
                 # Apply scaled displacement
                 deformed_point = x0 + scale * global_disp
                 deformed_points.append(deformed_point)
+                
+                # Store torsional angle
+                torsion_angles.append(scale * rx_xl)
             
             # Convert to array for plotting
             deformed_points = np.array(deformed_points)
             
-            # Plot the deformed shape
+            # Plot the deformed shape (beam centerline)
             self.ax.plot(deformed_points[:, 0], deformed_points[:, 1], deformed_points[:, 2], 
                     'b-', lw=2)
             
@@ -182,7 +253,12 @@ class Visualiser:
                         color='b', s=30)
             self.ax.scatter(deformed_points[-1, 0], deformed_points[-1, 1], deformed_points[-1, 2], 
                         color='b', s=30)
-                
+            
+            # Show rectangular cross section 
+            if show_cross_section:
+                self.plot_rectanglular_cross_sections(deformed_points=deformed_points, init_R=init_R, num_rectangles=num_rectangles, 
+                                                    torsion_angles=torsion_angles, rect_width=rect_width, rect_height=rect_height)
+            
             # For current state (if we scale displacements, we also need to scale local axes)
             curr_L = np.linalg.norm(curr_coords[1] - curr_coords[0])
             curr_R = curr_R.copy()

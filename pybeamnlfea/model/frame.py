@@ -113,7 +113,7 @@ class Frame:
         self.boundary_conditions[node_id] = boundary_class(node_id, constraints)
         
     def add_nodal_load(self, node_id: int, forces: List[float], load_class=NodalLoad) -> None:
-        """Add a load to a node."""
+        """Add a load to a node IN THE GLOBAL COORDINATE SYSTEM."""
         if node_id not in self.nodes:   
             raise ValueError(f"Node {node_id} not found in the frame")
         
@@ -121,7 +121,7 @@ class Frame:
 
     def add_uniform_load(self, element_id: int, forces: List[float], load_class=UniformLoad) -> None:
         """
-        Add a uniform load to an element in its local coordinate system.
+        Add a uniform load to an element IN ITS LOCAL COORDINATE SYSTEM.
         
         Args:
             element_id: Element to apply the load to
