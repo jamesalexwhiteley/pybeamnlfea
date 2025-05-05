@@ -117,75 +117,10 @@ class Visualiser:
                           f" {end_node.id}", fontsize=10)
 
         return self.fig, self.ax
-    
-
-    def plot_rectanglular_cross_sections(self, deformed_points, init_R, num_rectangles, torsion_angles, rect_width, rect_height):
-        """Create rectangles at selected points. """
-
-        rect_indices = np.linspace(0, len(deformed_points)-1, num_rectangles, dtype=int)
-        rect_corners_list = []  # Store all rectangle corners for connecting later
-        
-        # Create rectangles at selected points
-        for idx in rect_indices:
-            position = deformed_points[idx]
-            angle = torsion_angles[idx]
-            
-            # Create rectangle vertices in the YZ plane (perpendicular to X axis)
-            half_width = rect_width / 2
-            half_height = rect_height / 2
-            
-            # Create rectangle corners in YZ plane (x=0 in local coordinates)
-            rect_corners_local = np.array([
-                [0, -half_width, -half_height],  # Bottom left
-                [0, half_width, -half_height],   # Bottom right
-                [0, half_width, half_height],    # Top right
-                [0, -half_width, half_height]    # Top left
-            ])
-            
-            # Apply torsional rotation (around local X-axis)
-            cos_angle = np.cos(angle)
-            sin_angle = np.sin(angle)
-            
-            # Rotate YZ coordinates
-            rect_corners_rotated = np.array([
-                [0, pt[1]*cos_angle - pt[2]*sin_angle, pt[1]*sin_angle + pt[2]*cos_angle] 
-                for pt in rect_corners_local
-            ])
-            
-            # Transform to global coordinates using the original rotation matrix
-            rect_corners_global = np.array([
-                position + init_R.T @ corner for corner in rect_corners_rotated
-            ])
-            
-            # Store corners for later connecting
-            rect_corners_list.append(rect_corners_global)
-        
-        # Create quad strips between adjacent rectangles
-        for i in range(len(rect_corners_list) - 1):
-            rect1 = rect_corners_list[i]
-            rect2 = rect_corners_list[i+1]
-            
-            # Create four quad faces (one for each side of the prism)
-            for j in range(4):
-                j_next = (j + 1) % 4
-                quad = Poly3DCollection([[
-                    rect1[j], 
-                    rect1[j_next], 
-                    rect2[j_next],
-                    rect2[j]
-                ]], alpha=0.6)
-                
-                # Color based on position along beam
-                color_val = i / (len(rect_corners_list) - 2)
-                color = plt.cm.coolwarm(color_val)
-                
-                quad.set_facecolor(color)
-                quad.set_edgecolor('gray')
-                self.ax.add_collection3d(quad)
 
     def plot_deformed_shape(self, scale=1.0, show_undeformed=False, npoints=20, show_local_axes=False, 
-                            show_cross_section=True, rect_width=0.05, rect_height=0.1, num_rectangles=5):
-        """Visualize the model."""
+                            show_cross_section=True, cross_section_scale=1.0, num_rectangles=5):
+        """Visualize the model with continuous displacement coloring across elements."""
 
         if self.model is None or self.results is None:
             raise ValueError("Both model and results must be provided")
@@ -195,7 +130,12 @@ class Visualiser:
         if show_undeformed:
             self.plot_undeformed_model(nodes=True, dashed=True, show_local_axes=False, node_labels=False)
         
-        # Plot elements with shape function interpolation
+        # First pass: Calculate all points and displacements across all elements
+        all_deformed_points = []
+        all_init_points = []
+        all_torsion_angles = []
+        all_element_info = []  # Store element-specific info for later use
+        
         for elem_id, element in self.model.elements.items():
             # Get initial state
             init_coords = element.initial_state['coords']
@@ -218,8 +158,9 @@ class Visualiser:
             
             # Create points along element for shape function evaluation
             xi_values = np.linspace(0, 1, npoints)
-            deformed_points = []
-            torsion_angles = []
+            elem_deformed_points = []
+            elem_init_points = []  # Store initial points for displacement calculation
+            elem_torsion_angles = []
             
             for xi in xi_values:
                 # Evaluate shape functions
@@ -233,54 +174,159 @@ class Visualiser:
                 
                 # Initial position along element (linear interpolation)
                 x0 = init_coords[0] * (1-xi) + init_coords[1] * xi
+                elem_init_points.append(x0)
                 
                 # Apply scaled displacement
                 deformed_point = x0 + scale * global_disp
-                deformed_points.append(deformed_point)
+                elem_deformed_points.append(deformed_point)
                 
                 # Store torsional angle
-                torsion_angles.append(scale * rx_xl)
+                elem_torsion_angles.append(scale * rx_xl)
             
-            # Convert to array for plotting
-            deformed_points = np.array(deformed_points)
+            # Convert to arrays
+            elem_deformed_points = np.array(elem_deformed_points)
+            elem_init_points = np.array(elem_init_points)
             
-            # Plot the deformed shape (beam centerline)
-            self.ax.plot(deformed_points[:, 0], deformed_points[:, 1], deformed_points[:, 2], 
-                    'b-', lw=2)
+            # Store for global processing
+            all_deformed_points.append(elem_deformed_points)
+            all_init_points.append(elem_init_points)
+            all_torsion_angles.append(elem_torsion_angles)
+            all_element_info.append({
+                'elem_id': elem_id,
+                'init_R': init_R,
+                'curr_coords': curr_coords,
+                'curr_R': curr_R,
+                'curr_L': curr_L
+            })
+        
+        # Calculate global displacement norms for consistent colouring
+        all_displacements = []
+        for i in range(len(all_deformed_points)):
+            displacements = np.linalg.norm(all_deformed_points[i] - all_init_points[i], axis=1)
+            all_displacements.extend(displacements)
+        
+        # Get global min/max for normalisation
+        max_displacement = np.max(all_displacements) if all_displacements else 1.0
+        if max_displacement < 1e-10:
+            max_displacement = 1.0  # Prevent division by zero
+        
+        # Second pass: Plot elements with global displacement normalisation
+        for i, (elem_deformed_points, elem_init_points, elem_torsion_angles, elem_info) in enumerate(
+                zip(all_deformed_points, all_init_points, all_torsion_angles, all_element_info)):
             
-            # Plot nodes
-            self.ax.scatter(deformed_points[0, 0], deformed_points[0, 1], deformed_points[0, 2], 
-                        color='b', s=30)
-            self.ax.scatter(deformed_points[-1, 0], deformed_points[-1, 1], deformed_points[-1, 2], 
-                        color='b', s=30)
+            # Extract element info
+            elem_id = elem_info['elem_id']
+            init_R = elem_info['init_R']
+            curr_coords = elem_info['curr_coords']
+            curr_R = elem_info['curr_R']
+            curr_L = elem_info['curr_L']
             
-            # Show rectangular cross section 
+            if not show_cross_section: 
+                # Plot the deformed shape (beam centerline)
+                self.ax.plot(elem_deformed_points[:, 0], elem_deformed_points[:, 1], elem_deformed_points[:, 2], 
+                        'b-', lw=2)
+                
+                # Plot nodes
+                self.ax.scatter(elem_deformed_points[0, 0], elem_deformed_points[0, 1], elem_deformed_points[0, 2], 
+                            color='b', s=30)
+                self.ax.scatter(elem_deformed_points[-1, 0], elem_deformed_points[-1, 1], elem_deformed_points[-1, 2], 
+                            color='b', s=30)
+            
+            # Calculate displacements for this element
+            elem_displacement_norms = np.linalg.norm(elem_deformed_points - elem_init_points, axis=1)
+            
+            # Show rectangular cross section with global displacement normalisation
             if show_cross_section:
-                self.plot_rectanglular_cross_sections(deformed_points=deformed_points, init_R=init_R, num_rectangles=num_rectangles, 
-                                                    torsion_angles=torsion_angles, rect_width=rect_width, rect_height=rect_height)
+                # Select points for cross-sections
+                rect_indices = np.linspace(0, len(elem_deformed_points)-1, num_rectangles, dtype=int)
+                rect_deformed_points = elem_deformed_points[rect_indices]
+                rect_torsion_angles = np.array(elem_torsion_angles)[rect_indices]
+                rect_displacements = elem_displacement_norms[rect_indices]
+                
+                # Normalize displacements based on global max
+                normalized_displacements = rect_displacements / max_displacement
+                
+                # Create rectangles at selected points
+                rect_corners_list = []
+                
+                for j, (position, angle, norm_disp) in enumerate(zip(rect_deformed_points, rect_torsion_angles, normalized_displacements)):
+                    # Create rectangle vertices in the YZ plane (perpendicular to X axis)
+                    half_width = 0.05 * cross_section_scale / 2
+                    half_height = 0.1 * cross_section_scale / 2
+                    
+                    # Create rectangle corners in YZ plane (x=0 in local coordinates)
+                    rect_corners_local = np.array([
+                        [0, -half_width, -half_height],  # Bottom left
+                        [0, half_width, -half_height],   # Bottom right
+                        [0, half_width, half_height],    # Top right
+                        [0, -half_width, half_height]    # Top left
+                    ])
+                    
+                    # Apply torsional rotation (around local X-axis)
+                    cos_angle = np.cos(angle)
+                    sin_angle = np.sin(angle)
+                    
+                    # Rotate YZ coordinates
+                    rect_corners_rotated = np.array([
+                        [0, pt[1]*cos_angle - pt[2]*sin_angle, pt[1]*sin_angle + pt[2]*cos_angle] 
+                        for pt in rect_corners_local
+                    ])
+                    
+                    # Transform to global coordinates using the original rotation matrix
+                    rect_corners_global = np.array([
+                        position + init_R.T @ corner for corner in rect_corners_rotated
+                    ])
+                    
+                    # Associate displacement value with the rectangle for coloring
+                    rect_corners_list.append((rect_corners_global, norm_disp))
+                
+                # Create quad strips between adjacent rectangles
+                for j in range(len(rect_corners_list) - 1):
+                    rect1, disp1 = rect_corners_list[j]
+                    rect2, disp2 = rect_corners_list[j+1]
+                    
+                    # Use average displacement for coloring this segment
+                    avg_disp = (disp1 + disp2) / 2
+                    
+                    # Create four quad faces (one for each side of the prism)
+                    for k in range(4):
+                        k_next = (k + 1) % 4
+                        quad = Poly3DCollection([[
+                            rect1[k], 
+                            rect1[k_next], 
+                            rect2[k_next],
+                            rect2[k]
+                        ]], alpha=0.6)
+                        
+                        # Color based on displacement magnitude
+                        # color = plt.cm.Blues(avg_disp)
+                        color = plt.cm.RdPu(avg_disp)
+                        
+                        quad.set_facecolor(color)
+                        quad.set_edgecolor('gray')
+                        self.ax.add_collection3d(quad)
             
-            # For current state (if we scale displacements, we also need to scale local axes)
-            curr_L = np.linalg.norm(curr_coords[1] - curr_coords[0])
-            curr_R = curr_R.copy()
-            if curr_L > 1e-10:
-                # Update x-axis (tangent) to match scaled direction
-                curr_R[0] = (curr_coords[1] - curr_coords[0]) / curr_L
-                
-                # Ensure y and z axes remain orthogonal to new x-axis
-                y_temp = curr_R[1]
-                y_local = y_temp - np.dot(y_temp, curr_R[0]) * curr_R[0]
-                y_local = y_local / np.linalg.norm(y_local)
-                
-                z_local = np.cross(curr_R[0], y_local)
-                z_local = z_local / np.linalg.norm(z_local)
-                
-                curr_R[1] = y_local
-                curr_R[2] = z_local
-
-            # Show local axes at midpoint of current state if requested
+            # Show local axes if requested
             if show_local_axes:
+                # For current state (if we scale displacements, we also need to scale local axes)
+                temp_curr_R = curr_R.copy()
+                if curr_L > 1e-10:
+                    # Update x-axis (tangent) to match scaled direction
+                    temp_curr_R[0] = (curr_coords[1] - curr_coords[0]) / curr_L
+                    
+                    # Ensure y and z axes remain orthogonal to new x-axis
+                    y_temp = temp_curr_R[1]
+                    y_local = y_temp - np.dot(y_temp, temp_curr_R[0]) * temp_curr_R[0]
+                    y_local = y_local / np.linalg.norm(y_local)
+                    
+                    z_local = np.cross(temp_curr_R[0], y_local)
+                    z_local = z_local / np.linalg.norm(z_local)
+                    
+                    temp_curr_R[1] = y_local
+                    temp_curr_R[2] = z_local
+                
                 midpoint = (curr_coords[0] + curr_coords[1]) / 2
-                self.draw_local_axes(midpoint, curr_R, 
+                self.draw_local_axes(midpoint, temp_curr_R, 
                                 scale=self.local_axes_scale*curr_L,
                                 linewidth=2)
         

@@ -80,6 +80,8 @@ eigenvalues, eigenvectors = beam.solve_eigen(num_modes=1)
 for i in range(len(eigenvalues)):
     beam.show_mode_shape(eigenvectors[i], scale=10) # TODO check we are getting torsional mode 
 
+# TODO visualise displacement field (max, i.e. norm) + include cross_section_scale 
+
 # Analytical critical load 
 sigma_cr = G * (t/b)**2  
 P_cr_analytic = sigma_cr * A  

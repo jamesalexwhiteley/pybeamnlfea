@@ -50,26 +50,20 @@ class Frame:
             self.add_node(coord[0], coord[1], coord[2])
     
     def add_material(self, name: str, material: Material) -> None:
-        """
-        Add a material to the frame. 
-        """
+        """Add a material to the frame."""
         if name in self.materials:
             raise ValueError(f"Material '{name}' already exists")
         
         self.materials[name] = material
         
     def add_section(self, name: str, section: Section) -> None:
-        """
-        Add a cross-section to the frame.
-        """
+        """Add a cross-section to the frame."""
         if name in self.sections:
             raise ValueError(f"Section '{name}' already exists")
         self.sections[name] = section
             
     def add_element(self, node_ids: List[int], material_name: str, section_name: str, element_class: Element = Element, element_id: int=None) -> Element:
-        """
-        Add an element to the frame, connecting specified nodes with given properties.
-        """
+        """Add an element to the frame, connecting specified nodes with given properties."""
         # Find the nodes by ID
         element_nodes = []
         for node_id in node_ids:
@@ -187,19 +181,17 @@ class Frame:
             self.loads[node_j_id] = NodalLoad(node_j_id, global_force_j)
 
     def get_self_weight(self) -> float: 
-            """
-            Return self weight of frame object. 
-            """
-            if self.self_weight == 0: 
-                for element_id in self.elements:
-                
-                    # Weight of element -> gravity load 
-                    element = self.elements[element_id]
-                    vol = element.section.A * element.L 
-                    weight = 9.81 * vol * element.material.density 
-                    self.self_weight += weight
-                
-            return self.self_weight
+        """Return self weight of frame object."""
+        if self.self_weight == 0: 
+            for element_id in self.elements:
+            
+                # Weight of element -> gravity load 
+                element = self.elements[element_id]
+                vol = element.section.A * element.L 
+                weight = 9.81 * vol * element.material.density 
+                self.self_weight += weight
+            
+        return self.self_weight
 
     def add_gravity_load(self, scale: List[float]=[0, 0, 1]) -> None:
         """
@@ -256,9 +248,7 @@ class Frame:
         self.results = None
 
     def solve(self, solver_type: str='direct') -> Results:
-        """
-        Solve the frame model with a LinearSolver and return results.
-        """
+        """Solve the frame model with a LinearSolver and return results."""
         # Assemble 
         assembler = Assembler(self)
         
@@ -281,8 +271,10 @@ class Frame:
     
         return self.critical_loads, self.buckling_modes 
     
-    def show(self, scale: float=1.0, show_undeformed: bool=True, show_local_axes: bool=True) -> None:
+    def show(self, scale: float=1.0, show_undeformed: bool=True, show_local_axes: bool=True, 
+             show_cross_section: bool=True, cross_section_scale: float=1.0) -> None:
         """Plot the current step of the frame analysis."""
+
         if self.results is None:
             visualiser = Visualiser(self) 
             visualiser.plot_undeformed_model(
@@ -296,13 +288,15 @@ class Frame:
                 scale=scale, 
                 show_undeformed=show_undeformed,
                 show_local_axes=show_local_axes, 
+                show_cross_section=show_cross_section,
+                cross_section_scale=cross_section_scale
             )
             visualiser.show()
 
-    def show_mode_shape(self, mode, scale: float=1.0, show_undeformed: bool=True, show_local_axes: bool=False) -> None: 
-        """
-        Plot the deformed mode shape.
-        """        
+    def show_mode_shape(self, mode, scale: float=1.0, show_undeformed: bool=True, show_local_axes: bool=False, 
+                        show_cross_section: bool=True, cross_section_scale: float=1.0) -> None: 
+        """Plot the deformed mode shape.""" 
+
         results = Results(self.assembler, mode) 
         self.update_state(results.global_displacements) 
 
@@ -310,16 +304,17 @@ class Frame:
         visualiser.plot_deformed_shape(
             scale=scale, 
             show_undeformed=show_undeformed,
-            show_local_axes=show_local_axes
+            show_local_axes=show_local_axes,
+            show_cross_section=show_cross_section,
+            cross_section_scale=cross_section_scale
         )
 
         visualiser.show()
         self.reset_state()
         
     def show_mode_shapes(self, scale: float=1.0, show_undeformed: bool=True) -> None:
-        """
-        Plot the deformed mode shapes.
-        """
+        """Plot the deformed mode shapes."""
+
         if self.buckling_modes is None:
             print("Eigen has not been solved yet. Solving with default settings...")
             self.solve_eigen()

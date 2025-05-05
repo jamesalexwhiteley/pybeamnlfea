@@ -53,7 +53,7 @@ from pybeamnlfea.model.load import NodalLoad
 import numpy as np
 
 # Create a cantilever beam
-n = 20
+n = 10
 L = 5.0  # m 
 beam = Frame() 
 beam.add_nodes([[i*L/n, 0, 0] for i in range(n+1)])
@@ -95,7 +95,7 @@ Pcr = 4 * M0cr / L # NOTE why?
 for i in range(len(eigenvalues)):
     print(f"Mode {i+1}: Critical load = {eigenvalues[i]:.4e} N | Approx Pcr (mode 1) = {Pcr:.4e} N")
     mode_shape = eigenvectors[i]
-    beam.show_mode_shape(mode_shape, scale=10)
+    beam.show_mode_shape(mode_shape, scale=5)
 
 # # Run eigenvalue buckling analysis 
 # print("Running eigenvalue buckling analysis...") 

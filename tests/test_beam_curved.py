@@ -37,5 +37,5 @@ beam.add_nodal_load(nelems, [0, 0, -0.1, 0, 0, 0, 0], NodalLoad)
 results = beam.solve() 
 
 # # Plot the model
-results = beam.show() 
+results = beam.show(cross_section_scale=0.75) 
 
