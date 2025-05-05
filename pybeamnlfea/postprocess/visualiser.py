@@ -134,7 +134,7 @@ class Visualiser:
         all_deformed_points = []
         all_init_points = []
         all_torsion_angles = []
-        all_element_info = []  # Store element-specific info for later use
+        all_element_info = [] 
         
         for elem_id, element in self.model.elements.items():
             # Get initial state
@@ -159,7 +159,7 @@ class Visualiser:
             # Create points along element for shape function evaluation
             xi_values = np.linspace(0, 1, npoints)
             elem_deformed_points = []
-            elem_init_points = []  # Store initial points for displacement calculation
+            elem_init_points = []  
             elem_torsion_angles = []
             
             for xi in xi_values:
