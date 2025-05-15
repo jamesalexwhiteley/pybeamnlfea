@@ -20,16 +20,22 @@ class Assembler:
             for i in range(dofs_per_node):
                 # Check if this DOF is constrained by a boundary condition
                 is_constrained = False
+                has_finite_stiffness = False
+                
                 if node_id in self.frame.boundary_conditions:
                     bc = self.frame.boundary_conditions[node_id]
-                    if bc.is_dof_constrained(i):  
-                        is_constrained = True
+                    if bc.is_dof_constrained(i):
+                        if bc.has_finite_stiffness(i):
+                            has_finite_stiffness = True
+                        else:
+                            is_constrained = True
                 
                 if not is_constrained:
+                    # Both unconstrained DOFs and elastically supported DOFs get a DOF index
                     self.dof_map[(node_id, i)] = current_dof
                     current_dof += 1
                 else:
-                    # Assign negative index to indicate constrained DOF
+                    # Assign negative index to indicate fully constrained DOF
                     self.dof_map[(node_id, i)] = -1
         
         self.total_dofs = current_dof
@@ -57,7 +63,7 @@ class Assembler:
         else:
             total_dofs = self.total_dofs
         
-        # Assemble 
+        # Assemble element contributions
         for element_id, element in self.frame.elements.items():
             # Get element stiffness matrix 
             if geometric_stiffness:
@@ -105,6 +111,25 @@ class Assembler:
                     cols.append(j_global)
                     data.append(k_elem[i_local, j_local])
         
+        # Add contributions from elastic supports (finite stiffness)
+        for node_id, bc in self.frame.boundary_conditions.items():
+            node = self.frame.nodes[node_id]
+            
+            for i in range(node.ndof):
+                # Check if this DOF has a finite stiffness support
+                if bc.has_finite_stiffness(i):
+                    global_dof = self.dof_map.get((node_id, i), -1)
+                    
+                    # Skip if this DOF is not in our system (should not happen with finite stiffness)
+                    if global_dof < 0:
+                        continue
+                    
+                    # Add the support stiffness to the diagonal of K
+                    support_stiffness = bc.get_support_stiffness(i)
+                    rows.append(global_dof)
+                    cols.append(global_dof)
+                    data.append(support_stiffness)
+        
         K = coo_matrix((data, (rows, cols)), shape=(total_dofs, total_dofs))
         return K.tocsr()
     
@@ -127,5 +152,22 @@ class Assembler:
                     if global_dof >= 0:
                         F[global_dof] += force_vector[local_dof]
         
+        # Add support settlement/displacement effects for finite stiffness supports
+        for node_id, bc in self.frame.boundary_conditions.items():
+            node = self.frame.nodes[node_id]
+            
+            for i in range(node.ndof):
+                # Check if this DOF has a finite stiffness support with prescribed displacement
+                if bc.has_finite_stiffness(i) and bc.has_prescribed_displacement(i):
+                    global_dof = self.dof_map.get((node_id, i), -1)
+                    
+                    # Skip if this DOF is not in our system
+                    if global_dof < 0:
+                        continue
+                    
+                    # Calculate force from support displacement: F = k * u
+                    support_stiffness = bc.get_support_stiffness(i)
+                    prescribed_displacement = bc.get_prescribed_displacement(i)
+                    F[global_dof] += support_stiffness * prescribed_displacement
+        
         return F
-    

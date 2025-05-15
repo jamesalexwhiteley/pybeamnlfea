@@ -105,6 +105,28 @@ class Frame:
             raise ValueError(f"Node {node_id} not found in the frame")
         
         self.boundary_conditions[node_id] = boundary_class(node_id, constraints)
+
+    def add_elastic_boundary_condition(self, node_id: int, dof_index: int, stiffness: float, 
+                                    prescribed_displacement: float = 0.0) -> None:
+        """
+        Add an elastic boundary condition to a node.
+        
+        Args:
+            node_id: Node ID
+            dof_index: Index of DOF (0=ux, 1=uy, 2=uz, 3=θx, 4=θy, 5=θz, 6=φ)
+            stiffness: Stiffness value of the elastic support
+            prescribed_displacement: Optional prescribed displacement/rotation
+        """
+        if node_id not in self.nodes:
+            raise ValueError(f"Node {node_id} not found in the frame")
+        
+        # Create a new boundary condition if none exists
+        if node_id not in self.boundary_conditions:
+            # Initialize with all DOFs free
+            self.boundary_conditions[node_id] = BoundaryCondition(node_id, [True, True, True, True, True, True, True])
+        
+        # Add the elastic support to the existing boundary condition
+        self.boundary_conditions[node_id].add_elastic_support(dof_index, stiffness, prescribed_displacement)
         
     def add_nodal_load(self, node_id: int, forces: List[float], load_class=NodalLoad) -> None:
         """Add a load to a node IN THE GLOBAL COORDINATE SYSTEM."""
