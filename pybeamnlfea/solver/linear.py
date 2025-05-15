@@ -54,8 +54,8 @@ class LinearSolver(Solver):
         u_full = np.zeros(total_dofs)
         
         # Fill displacement values 
-        for (node_id, dof_idx), disp in nodal_displacements.items():
-            global_dof = node_id * assembler.frame.nodes[node_id].ndof + dof_idx
+        for (node_id, dof_ind), disp in nodal_displacements.items():
+            global_dof = node_id * assembler.frame.nodes[node_id].ndof + dof_ind
             u_full[global_dof] = disp
         
         # Forward problem 
@@ -64,9 +64,9 @@ class LinearSolver(Solver):
         # Extract forces 
         nodal_forces = {}
         for node_id, node in assembler.frame.nodes.items():
-            for dof_idx in range(node.ndof):
-                global_dof = node_id * node.ndof + dof_idx
-                nodal_forces[(node_id, dof_idx)] = F_all[global_dof]
+            for dof_ind in range(node.ndof):
+                global_dof = node_id * node.ndof + dof_ind
+                nodal_forces[(node_id, dof_ind)] = F_all[global_dof]
 
         return nodal_forces
 
@@ -75,12 +75,12 @@ class LinearSolver(Solver):
         Create a dictionary mapping node IDs and DOFs to displacements.
         """
         nodal_displacements = {}
-        for (node_id, dof_idx), global_dof in assembler.dof_map.items():
+        for (node_id, dof_ind), global_dof in assembler.dof_map.items():
             if global_dof >= 0: # Unconstrained DOFs
-                nodal_displacements[(node_id, dof_idx)] = u[global_dof]
+                nodal_displacements[(node_id, dof_ind)] = u[global_dof]
             else:
                 # For constrained DOFs, displacement is zero
-                nodal_displacements[(node_id, dof_idx)] = 0.0
+                nodal_displacements[(node_id, dof_ind)] = 0.0
 
         return nodal_displacements
 

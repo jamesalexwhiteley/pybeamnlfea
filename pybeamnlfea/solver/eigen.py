@@ -29,9 +29,9 @@ class EigenSolver(LinearSolver):
             eigenvalues, eigenvectors = np.real(eigenvalues), np.real(eigenvectors)
 
             # Sort results 
-            idx = np.argsort(np.abs(eigenvalues))[::-1]
-            eigenvalues = eigenvalues[idx]
-            eigenvectors = eigenvectors[:, idx]
+            ind = np.argsort(np.abs(eigenvalues))[::-1]
+            eigenvalues = eigenvalues[ind]
+            eigenvectors = eigenvectors[:, ind]
             critical_loads = 1 / eigenvalues
 
         except Exception as e: 

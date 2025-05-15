@@ -43,7 +43,7 @@ results = beam.solve()
 # beam.show(scale=2e2, show_undeformed=True, show_local_axes=False)
 
 # check torsional displacement 
-torsional_disp = results.get_nodal_displacements(node_id=n, dof_idx=3)
+torsional_disp = results.get_nodal_displacements(node_id=n, dof_ind=3)
 analytic_torsional_disp = T * L / (G * J)
 relative_error = abs(torsional_disp - analytic_torsional_disp) / analytic_torsional_disp * 100
 print(f"Precentage error in torsional displacement: {relative_error:.2f}%")
