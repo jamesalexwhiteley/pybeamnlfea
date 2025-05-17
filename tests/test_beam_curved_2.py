@@ -38,7 +38,7 @@ beam.add_gravity_load([0, 0, 0.1])
 
 # Solve the model
 results = beam.solve() 
-beam.show() 
+beam.show_deformed_shape() 
 
 # Linear buckling analysis 
 beam.solve_eigen(num_modes=10)

@@ -151,7 +151,7 @@ class Results:
     #     dNx2_dx = 1/L
         
     #     # Axial force P = EA * du/dx
-    #     P = E * A * (dNx1_dx * u1 + dNx2_dx * u2)
+    #     Fx = E * A * (dNx1_dx * u1 + dNx2_dx * u2)
         
     #     # 2. Torsional Moment (Mx)
     #     # Derivative of torsional shape functions (constant)
@@ -184,26 +184,26 @@ class Results:
         
     #     # 5. Shear Forces (V = dM/dx)
     #     # Using curvature derivatives or directly from shape functions
-    #     Vy = -E * Iz * d2v_dx2
-    #     Vz = E * Iy * d2w_dx2
+    #     Fy = -E * Iz * d2v_dx2
+    #     Fz = E * Iy * d2w_dx2
         
     #     # 6. Bimoment (Bw)
     #     # Derivative of warping shape functions
     #     dNphi1_dx = -1/L
     #     dNphi2_dx = 1/L
         
-    #     # Bimoment Bw = -EIw * dφ/dx
-    #     Bw = -E * Iw * (dNphi1_dx * phi1 + dNphi2_dx * phi2)
+    #     # Bimoment Bx = -EIw * dφ/dx
+    #     Bx = -E * Iw * (dNphi1_dx * phi1 + dNphi2_dx * phi2)
         
     #     return {
-    #         'axial': P,
-    #         'torsion': Mx,
-    #         'shear_y': Vy,
-    #         'shear_z': Vz,
-    #         'moment_y': My,
-    #         'moment_z': Mz,
-    #         'bimoment': Bw,
-    #         'position': xi
+    #         'Fx': Fx,
+    #         'Fy': Fy,
+    #         'Fz': Fz,
+    #         'Mx': Mx,
+    #         'My': My,
+    #         'Mz': Mz,
+    #         'Bm': Bx,
+    #         'pos': xi
     #     }
 
     def compute_element_internal_forces(self, element_id, xi):
@@ -229,22 +229,22 @@ class Results:
         internal_forces_vector = k_elastic @ local_dofs
         
         # Extract nodal forces (end 1)
-        Fx1 = internal_forces_vector[0]
-        Fy1 = internal_forces_vector[1]
-        Fz1 = internal_forces_vector[2]
-        Mx1 = internal_forces_vector[3]
-        My1 = internal_forces_vector[4]
-        Mz1 = internal_forces_vector[5]
-        Bm1 = internal_forces_vector[6]
+        Fx1 = -internal_forces_vector[0]
+        Fy1 =  internal_forces_vector[1]
+        Fz1 =  internal_forces_vector[2]
+        Mx1 =  internal_forces_vector[3]
+        My1 =  internal_forces_vector[4]
+        Mz1 =  internal_forces_vector[5]
+        Bm1 =  internal_forces_vector[6]
         
         # Extract nodal forces (end 2)
-        Fx2 = -internal_forces_vector[7]  # Negative for equilibrium
+        Fx2 =  internal_forces_vector[7]  # Negative for equilibrium
         Fy2 = -internal_forces_vector[8]
         Fz2 = -internal_forces_vector[9]
-        Mx2 = internal_forces_vector[10]
-        My2 = internal_forces_vector[11]
-        Mz2 = internal_forces_vector[12]
-        Bm2 = internal_forces_vector[13]
+        Mx2 =  internal_forces_vector[10]
+        My2 = -internal_forces_vector[11]
+        Mz2 = -internal_forces_vector[12]
+        Bm2 =  internal_forces_vector[13]
         
         # Simple linear interpolation between end forces
         Fx = (1 - xi) * Fx1 + xi * Fx2
@@ -256,33 +256,32 @@ class Results:
         Bm = (1 - xi) * Bm1 + xi * Bm2
         
         return {
-            'axial': Fx,
-            'shear_y': Fy,
-            'shear_z': Fz,
-            'torsion': Mx,
-            'moment_y': My,
-            'moment_z': Mz,
-            'bimoment': Bm,
-            'position': xi
+            'Fx': Fx,
+            'Fy': Fy,
+            'Fz': Fz,
+            'Mx': Mx,
+            'My': My,
+            'Mz': Mz,
+            'Bm': Bm,
+            'pos': xi
         }
 
-    def get_element_forces(self, element_id, n_points=5, force_type='all', summary_type='max'):
+    def process_element_internal_forces(self, element_id, n_points=5, force_type='all', summary_type='max'):
         """
         Get summary of internal forces for a specific element.
         
         Args:
             element_id: Element identifier
             n_points: Number of points to sample along the element 
-            force_type: Type of force to analyze ('all', 'axial', 'shear_y', 'shear_z', 
-                    'torsion', 'moment_y', 'moment_z', 'bimoment')
+            force_type: Type of force to analyze ('all', 'Fx', 'Fy', 'Fz', 
+                    'Mx', 'My', 'Mz', 'Bm')
             summary_type: Type of summary ('max', 'min', 'avg', 'range', 'all')
             
         Returns:
-            dict: Summary of internal forces with requested statistics
+            dict: Summary of internal forces with requested statistics and all force values
         """
         # Validate inputs
-        valid_force_types = ['all', 'axial', 'shear_y', 'shear_z', 'torsion', 
-                            'moment_y', 'moment_z', 'bimoment']
+        valid_force_types = ['all', 'Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz', 'Bm']
         valid_summary_types = ['max', 'min', 'avg', 'range', 'all']
         
         if force_type not in valid_force_types:
@@ -313,7 +312,12 @@ class Results:
         else:
             force_types_to_process = [force_type]
         
-        # Process each force type
+        # Add all force values to the result dictionary
+        for force in valid_force_types[1:]:  # All except 'all'
+            force_values = [point_forces[force] for point_forces in forces_at_points]
+            result[force] = force_values
+        
+        # Process each force type for summary statistics
         for force in force_types_to_process:
             # Extract values for this force type
             force_values = [point_forces[force] for point_forces in forces_at_points]
@@ -350,4 +354,133 @@ class Results:
             result['sampled_points'] = forces_at_points
         
         return result
+    
+    def process_element_forces(self, n_points=5, force_type='all', summary_type='max'):
+        """
+        Get summary of internal forces across all elements in the structure.
+        Finds the maximum, minimum, or other statistics for force values
+        across the entire structure and identifies which elements have these values.
         
+        Args:
+            n_points: Number of points to sample along each element 
+            force_type: Type of force to analyze ('all', 'Fx', 'Fy', 'Fz', 
+                    'Mx', 'My', 'Mz', 'Bm')
+            summary_type: Type of summary ('max', 'min', 'avg', 'range', 'all')
+            
+        Returns:
+            dict: Summary of internal forces with requested statistics for the entire structure,
+                including which elements have the extreme values
+        """
+        # Validate inputs
+        valid_force_types = ['all', 'Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz', 'Bm']
+        valid_summary_types = ['max', 'min', 'avg', 'range', 'all']
+        
+        if force_type not in valid_force_types:
+            raise ValueError(f"Invalid force_type. Must be one of {valid_force_types}")
+        
+        if summary_type not in valid_summary_types:
+            raise ValueError(f"Invalid summary_type. Must be one of {valid_summary_types}")
+        
+        # Determine which force types to process
+        if force_type == 'all':
+            force_types_to_process = valid_force_types[1:]  # All except 'all'
+        else:
+            force_types_to_process = [force_type]
+        
+        # Initialize results dictionary
+        result = {}
+        
+        # Process all elements
+        all_elements = list(self.assembler.frame.elements.keys())
+        element_results = {}
+        
+        for elem_id in all_elements:
+            # Process this element
+            element_forces = self.process_element_internal_forces(
+                element_id=elem_id, 
+                n_points=n_points, 
+                force_type='all', 
+                summary_type='all'
+            )
+            element_results[elem_id] = element_forces
+        
+        # Find global extremes for each force type
+        for force in force_types_to_process:
+            # Collect maximum values from each element
+            max_values = {}
+            min_values = {}
+            all_values = []
+            
+            # Collect data from all elements
+            for elem_id, elem_result in element_results.items():
+                max_val = elem_result[f"{force}_max"]
+                min_val = elem_result[f"{force}_min"]
+                max_pos = elem_result[f"{force}_max_position"]
+                min_pos = elem_result[f"{force}_min_position"]
+                
+                max_values[elem_id] = {
+                    'value': max_val, 
+                    'position': max_pos
+                }
+                
+                min_values[elem_id] = {
+                    'value': min_val, 
+                    'position': min_pos
+                }
+                
+                # Add all values for calculating global average
+                all_values.extend(elem_result[force])
+            
+            # Find global maximum
+            global_max_elem_id = max(max_values, key=lambda k: abs(max_values[k]['value']))
+            global_max_value = max_values[global_max_elem_id]['value']
+            global_max_position = max_values[global_max_elem_id]['position']
+            
+            # Find global minimum
+            global_min_elem_id = min(min_values, key=lambda k: min_values[k]['value'])
+            global_min_value = min_values[global_min_elem_id]['value']
+            global_min_position = min_values[global_min_elem_id]['position']
+            
+            # Calculate global average
+            global_avg = sum(all_values) / len(all_values) if all_values else 0
+            
+            # Calculate global range
+            global_range = global_max_value - global_min_value
+            
+            # Store results for this force type
+            if summary_type == 'max' or summary_type == 'all':
+                result[f"{force}_max"] = {
+                    'value': global_max_value,
+                    'element_id': global_max_elem_id,
+                    'position': global_max_position
+                }
+                
+                # Also store absolute max
+                abs_max_elem_id = max(max_values, key=lambda k: abs(max_values[k]['value']))
+                abs_max_value = max_values[abs_max_elem_id]['value']
+                abs_max_position = max_values[abs_max_elem_id]['position']
+                
+                result[f"{force}_abs_max"] = {
+                    'value': abs_max_value,
+                    'element_id': abs_max_elem_id,
+                    'position': abs_max_position
+                }
+            
+            if summary_type == 'min' or summary_type == 'all':
+                result[f"{force}_min"] = {
+                    'value': global_min_value,
+                    'element_id': global_min_elem_id,
+                    'position': global_min_position
+                }
+            
+            if summary_type == 'avg' or summary_type == 'all':
+                result[f"{force}_avg"] = global_avg
+            
+            if summary_type == 'range' or summary_type == 'all':
+                result[f"{force}_range"] = global_range
+        
+        # Add more detailed information if requested
+        if summary_type == 'all':
+            result['element_results'] = element_results
+        
+        return result

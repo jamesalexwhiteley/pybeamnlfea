@@ -331,6 +331,200 @@ class Visualiser:
                                 linewidth=2)
         
         return self.fig, self.ax
+    
+    def plot_force_field(self, force_type='Fx', scale=1.0, npoints=10, line_width=3, show_values=True, value_frequency=5):
+            """
+            Visualize force fields (e.g., axial force, bending moment, shear) along beam elements.
+            
+            Args:
+                force_type: Type of force to visualize ('Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz', 'Bx')
+
+            """
+            if self.model is None or self.results is None:
+                        raise ValueError("Both model and results must be provided")
+            
+            # Initialize the plot
+            self.initialize_plot()
+            
+            # Calculate all points and force values across all elements
+            all_points = []       
+            all_forces = []        
+            all_element_info = [] 
+            
+            # Calculate forces and points for all elements
+            for elem_id, element in self.model.elements.items():
+                init_coords = element.initial_state['coords']
+                init_R = element.initial_state['R']  
+                
+                # Create points along the element
+                xi_values = np.linspace(0, 1, npoints)
+                elem_points = []
+                elem_forces = []
+                
+                for xi in xi_values:
+                    # Calculate forces at this point
+                    forces = self.results.compute_element_internal_forces(elem_id, xi)
+                    
+                    # Store the requested force type
+                    force_value = forces[force_type]
+                    elem_forces.append(force_value)
+                    
+                    # Calculate position (linear interpolation of element's initial coordinates)
+                    point = init_coords[0] * (1-xi) + init_coords[1] * xi
+                    elem_points.append(point)
+                
+                # Convert to numpy arrays
+                elem_points = np.array(elem_points)
+                elem_forces = np.array(elem_forces)
+                
+                # Store for global processing
+                all_points.append(elem_points)
+                all_forces.append(elem_forces)
+                all_element_info.append({
+                    'elem_id': elem_id,
+                    'init_R': init_R,
+                    'init_coords': init_coords
+                })
+
+            # Determine global min/max force values for display purposes only
+            all_force_values = np.concatenate(all_forces)
+            global_min_force = np.min(all_force_values)
+            global_max_force = np.max(all_force_values)
+            
+            # Avoid division by zero if min=max
+            if abs(global_max_force - global_min_force) < 1e-10:
+                global_min_force -= 0.1
+                global_max_force += 0.1
+                
+            # Determine normalization factor (maximum absolute value)
+            max_abs_force = max(abs(global_min_force), abs(global_max_force))
+            if max_abs_force < 1e-10:
+                max_abs_force = 1.0 
+            
+            # Store original values for display
+            original_forces = []
+            for elem_forces in all_forces:
+                original_forces.append(elem_forces.copy())
+            
+            from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+            # Plot the force diagram for each element
+            for i, (elem_points, elem_forces, elem_info) in enumerate(
+                    zip(all_points, all_forces, all_element_info)):
+                
+                elem_id = elem_info['elem_id']
+                init_R = elem_info['init_R']  
+                
+                # Get local axes
+                local_x = init_R[0]  # First row is local x-axis
+                local_y = init_R[1]  # Second row is local y-axis
+                local_z = init_R[2]  # Third row is local z-axis
+                
+                # Determine normal direction based on force type as specified
+                if force_type == 'Fx':
+                    # Plot in local z (tension positive)
+                    normal_dir = local_z
+                elif force_type == 'Fy':
+                    # Plot in local y
+                    normal_dir = local_y
+                elif force_type == 'Fz':
+                    # Plot in local z
+                    normal_dir = local_z
+                elif force_type == 'Mx':
+                    # Plot in local z
+                    normal_dir = local_z
+                elif force_type == 'My':
+                    # Plot in local z (hogging positive)
+                    normal_dir = local_z
+                elif force_type == 'Mz':
+                    # Plot in local y (hogging positive)
+                    normal_dir = local_y
+                elif force_type == 'Bx':
+                    # Plot in local z
+                    normal_dir = local_z
+                else:
+                    # Default fallback, use local z
+                    normal_dir = local_z
+                
+                # Normalize the normal direction
+                normal_dir = normal_dir / np.linalg.norm(normal_dir)
+                
+                # Normalize forces for display (max absolute value = 1.0)
+                normalized_forces = elem_forces / max_abs_force
+                
+                # Create force diagram points (offset from element axis by scaled force value)
+                diagram_points = elem_points + scale * np.outer(normalized_forces, normal_dir)
+                
+                # Draw centerline (undeformed beam)
+                self.ax.plot(elem_points[:, 0], elem_points[:, 1], elem_points[:, 2], 
+                            'k-', lw=1, alpha=0.5)
+                
+                # Draw force diagram with red/blue coloring and shading
+                for j in range(len(elem_points)-1):
+                    # Line segment from point j to j+1
+                    p1 = diagram_points[j]
+                    p2 = diagram_points[j+1]
+                    
+                    # Base points on the centerline
+                    b1 = elem_points[j]
+                    b2 = elem_points[j+1]
+                    
+                    # Determine color based on average force value of this segment (use original values)
+                    avg_force = (elem_forces[j] + elem_forces[j+1]) / 2
+                    color = 'red' if avg_force >= 0 else 'blue'
+                    
+                    # Plot the force diagram segment
+                    self.ax.plot([p1[0], p2[0]], [p1[1], p2[1]], [p1[2], p2[2]], 
+                                '-', lw=line_width, color=color)
+                    
+                    # Shade between the force diagram and centerline
+                    quad = Poly3DCollection([[
+                        b1, b2, p2, p1
+                    ]], alpha=0.5)
+                    
+                    # Set the face color to match the line
+                    quad.set_facecolor(color)
+                    
+                    # Add the quad to the plot
+                    self.ax.add_collection3d(quad)
+                    
+                    # Connect to baseline
+                    if j == 0 or j == len(elem_points)-2 or j % (npoints//5) == 0:
+                        self.ax.plot([b1[0], p1[0]], [b1[1], p1[1]], [b1[2], p1[2]], 
+                                    'k--', lw=0.5, alpha=0.5)
+                        
+                        # Display value if requested
+                        if show_values and j % value_frequency == 0:
+                            # Position label slightly offset from the force diagram
+                            label_pos = p1 + 0.05 * normal_dir
+                            # Display original (non-normalized) force value
+                            original_value = original_forces[i][j]
+                            self.ax.text(label_pos[0], label_pos[1], label_pos[2], 
+                                        f'{original_value:.2f}', 
+                                        fontsize=8, ha='center', va='center')
+            
+            # Create legend 
+            from matplotlib.lines import Line2D
+            
+            # Set plot title
+            force_type_labels = {
+                'Fx': 'Axial Force',
+                'Fy': 'Shear Force (Y)',
+                'Fz': 'Shear Force (Z)',
+                'Mx': 'Torsional Moment',
+                'My': 'Bending Moment (Y)',
+                'Mz': 'Bending Moment (Z)',
+                'Bx': 'Bimoment'
+            }
+            
+            title = force_type_labels.get(force_type, force_type) 
+            self.ax.set_title(title)
+            
+            # Add note 
+            min_max_text = f"Min: {global_min_force:.2f}, Max: {global_max_force:.2f}\nNormalized (Plot scale = 1.0 at max value)"
+            self.ax.text2D(0.05, 0.95, min_max_text, transform=self.ax.transAxes, 
+                        fontsize=10, verticalalignment='top')
+            
+            return self.fig, self.ax
 
     def show(self):
         """Show the current plot."""

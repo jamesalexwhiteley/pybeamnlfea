@@ -38,9 +38,9 @@ beam.add_boundary_condition(n, [1, 1, 1, 1, 1, 1, 1], BoundaryCondition) # Free
 T = 1
 beam.add_nodal_load(n, [0, 0, 0, T, 0, 0, 0], NodalLoad)
 
-# Solve and show deformed model 
+# Solve and show_deformed_shape deformed model 
 results = beam.solve() 
-# beam.show(scale=2e2, show_undeformed=True, show_local_axes=False)
+# beam.show_deformed_shape(scale=2e2, show_undeformed=True, show_local_axes=False)
 
 # check torsional displacement 
 torsional_disp = results.get_nodal_displacements(node_id=n, dof_ind=3)

@@ -142,7 +142,7 @@ for i in range(len(eigenvalues)):
 
 
 # beam.solve()
-# beam.show(scale=1)
+# beam.show_deformed_shape(scale=1)
 
 # beam.add_boundary_condition(0, [0, 0, 0, 0, 1, 1, 0], BoundaryCondition) 
 # beam.add_boundary_condition(n, [1, 0, 0, 1, 1, 1, 0], BoundaryCondition) 
@@ -157,7 +157,7 @@ for i in range(len(eigenvalues)):
 # # Linear analysis 
 # results = beam.solve()
 # print(results.get_nodal_displacements(10))
-# beam.show(scale=1) 
+# beam.show_deformed_shape(scale=1) 
 
 # coeff = val * w / ((G * J * E * Iy)**0.5 / L**3)
 # print(f"Mode {i+1}: wcr={w * val} coeff={coeff}") # wcr = 28.5 (Stratford and Burgoyne)

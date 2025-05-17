@@ -293,7 +293,7 @@ class Frame:
     
         return self.critical_loads, self.buckling_modes 
     
-    def show(self, scale: float=1.0, show_undeformed: bool=True, show_local_axes: bool=True, 
+    def show_deformed_shape(self, scale: float=1.0, show_undeformed: bool=True, show_local_axes: bool=True, 
              show_cross_section: bool=True, cross_section_scale: float=1.0) -> None:
         """Plot the current step of the frame analysis."""
 
@@ -313,6 +313,18 @@ class Frame:
                 show_cross_section=show_cross_section,
                 cross_section_scale=cross_section_scale
             )
+            visualiser.show()
+
+    def show_force_field(self, force_type: str='Fx', scale: float=1.0) -> None: 
+        """Plot the current step of the frame analysis."""
+
+        if self.results is None:
+            print("Error: self.results is None")
+        
+        else: 
+            visualiser = Visualiser(self, self.results)
+            visualiser.plot_undeformed_model(show_local_axes=True)
+            visualiser.plot_force_field(force_type=force_type, scale=scale, npoints=10, line_width=3, show_values=True, value_frequency=5)
             visualiser.show()
 
     def show_mode_shape(self, mode, scale: float=1.0, show_undeformed: bool=True, show_local_axes: bool=False, 
