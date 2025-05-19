@@ -27,5 +27,5 @@ beam.add_nodal_load(n, [0, 0, -1, 0, 0, 0, 0], NodalLoad)
 
 # Solve the model
 results = beam.solve() 
-print(results.get_nodal_forces(0))
+print(results.get_nodal_forces(0)) 
 beam.show_deformed_shape(cross_section_scale=0.75) 

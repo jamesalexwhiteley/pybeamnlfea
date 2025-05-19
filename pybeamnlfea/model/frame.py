@@ -100,7 +100,7 @@ class Frame:
             self.add_element(node_ids, material_name, section_name, element_class, element_id)
         
     def add_boundary_condition(self, node_id: int, constraints: List[bool], boundary_class) -> None:
-        """Add a boundary condition to a node."""
+        """Add a boundary condition to a node IN GLOBAL COORDINATES."""
         if node_id not in self.nodes:
             raise ValueError(f"Node {node_id} not found in the frame")
         
@@ -315,7 +315,7 @@ class Frame:
             )
             visualiser.show()
 
-    def show_force_field(self, force_type: str='Fx', scale: float=1.0) -> None: 
+    def show_force_field(self, force_type: str='Fx', scale: float=1.0, npoints: int=10) -> None: 
         """Plot the current step of the frame analysis."""
 
         if self.results is None:
@@ -324,7 +324,7 @@ class Frame:
         else: 
             visualiser = Visualiser(self, self.results)
             visualiser.plot_undeformed_model(show_local_axes=True)
-            visualiser.plot_force_field(force_type=force_type, scale=scale, npoints=10, line_width=3, show_values=True, value_frequency=5)
+            visualiser.plot_force_field(force_type=force_type, scale=scale, npoints=npoints, line_width=3, show_values=True, value_frequency=5)
             visualiser.show()
 
     def show_mode_shape(self, mode, scale: float=1.0, show_undeformed: bool=True, show_local_axes: bool=False, 

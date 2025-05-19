@@ -335,15 +335,16 @@ class Visualiser:
     def plot_force_field(self, force_type='Fx', scale=1.0, npoints=10, line_width=3, show_values=True, value_frequency=5):
             """
             Visualize force fields (e.g., axial force, bending moment, shear) along beam elements.
+            NOTE THIS FEATURE IS A WORK IN PROGRESS
             
             Args:
-                force_type: Type of force to visualize ('Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz', 'Bx')
+                force_type: Type of force to visualise ('Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz', 'Bx')
 
             """
             if self.model is None or self.results is None:
                         raise ValueError("Both model and results must be provided")
             
-            # Initialize the plot
+            # Initialise the plot
             self.initialize_plot()
             
             # Calculate all points and force values across all elements
@@ -413,45 +414,28 @@ class Visualiser:
                 
                 elem_id = elem_info['elem_id']
                 init_R = elem_info['init_R']  
-                
-                # Get local axes
-                local_x = init_R[0]  # First row is local x-axis
-                local_y = init_R[1]  # Second row is local y-axis
-                local_z = init_R[2]  # Third row is local z-axis
-                
-                # Determine normal direction based on force type as specified
+    
+                # Plot force diagrams in global directions 
                 if force_type == 'Fx':
-                    # Plot in local z (tension positive)
-                    normal_dir = local_z
+                    normal_dir = np.array([0, 0, 1])
                 elif force_type == 'Fy':
-                    # Plot in local y
-                    normal_dir = local_y
+                    normal_dir = np.array([0, 1, 0])
                 elif force_type == 'Fz':
-                    # Plot in local z
-                    normal_dir = local_z
+                    normal_dir = np.array([0, 0, 1])
                 elif force_type == 'Mx':
-                    # Plot in local z
-                    normal_dir = local_z
+                    normal_dir = np.array([0, 0, 1])
                 elif force_type == 'My':
-                    # Plot in local z (hogging positive)
-                    normal_dir = local_z
+                    normal_dir = np.array([0, 0, 1])
                 elif force_type == 'Mz':
-                    # Plot in local y (hogging positive)
-                    normal_dir = local_y
-                elif force_type == 'Bx':
-                    # Plot in local z
-                    normal_dir = local_z
+                    normal_dir = np.array([0, 1, 0])
+                elif force_type == 'Bm':
+                    normal_dir = np.array([0, 0, 1])
                 else:
-                    # Default fallback, use local z
-                    normal_dir = local_z
+                    # default 
+                    normal_dir = np.array([0, 0, 1])
                 
-                # Normalize the normal direction
-                normal_dir = normal_dir / np.linalg.norm(normal_dir)
-                
-                # Normalize forces for display (max absolute value = 1.0)
+                # Normalise forces for display 
                 normalized_forces = elem_forces / max_abs_force
-                
-                # Create force diagram points (offset from element axis by scaled force value)
                 diagram_points = elem_points + scale * np.outer(normalized_forces, normal_dir)
                 
                 # Draw centerline (undeformed beam)
@@ -468,11 +452,10 @@ class Visualiser:
                     b1 = elem_points[j]
                     b2 = elem_points[j+1]
                     
-                    # Determine color based on average force value of this segment (use original values)
+                    # Determine color based on average force 
                     avg_force = (elem_forces[j] + elem_forces[j+1]) / 2
                     color = 'red' if avg_force >= 0 else 'blue'
                     
-                    # Plot the force diagram segment
                     self.ax.plot([p1[0], p2[0]], [p1[1], p2[1]], [p1[2], p2[2]], 
                                 '-', lw=line_width, color=color)
                     
@@ -481,10 +464,7 @@ class Visualiser:
                         b1, b2, p2, p1
                     ]], alpha=0.5)
                     
-                    # Set the face color to match the line
-                    quad.set_facecolor(color)
-                    
-                    # Add the quad to the plot
+                    quad.set_facecolor(color)                    
                     self.ax.add_collection3d(quad)
                     
                     # Connect to baseline
@@ -496,7 +476,7 @@ class Visualiser:
                         if show_values and j % value_frequency == 0:
                             # Position label slightly offset from the force diagram
                             label_pos = p1 + 0.05 * normal_dir
-                            # Display original (non-normalized) force value
+                            # Display original force value
                             original_value = original_forces[i][j]
                             self.ax.text(label_pos[0], label_pos[1], label_pos[2], 
                                         f'{original_value:.2f}', 

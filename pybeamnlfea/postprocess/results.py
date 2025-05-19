@@ -112,104 +112,10 @@ class Results:
         else:
             raise ValueError("Local coordinate system not implemented for nodal forces")
 
-    # def compute_element_internal_forces(self, element_id, xi): # NOTE (WIP)
-    #     """
-    #     Calculate interpolated internal forces at a point along the element.
-        
-    #     Args:
-    #         element_id: Element identifier
-    #         xi: Normalized position (0 to 1) along the element  
-            
-    #     Returns:
-    #         dict: Internal forces at specified position
-    #     """
-    #     element = self.assembler.frame.elements[element_id]
-    #     R = element.initial_state['R']
-    #     L = element.initial_state['L']
-    #     E = element.material.E
-    #     G = element.material.G
-        
-    #     # Cross-section properties
-    #     A = element.section.A
-    #     Iy = element.section.Iy
-    #     Iz = element.section.Iz
-    #     J = element.section.J
-    #     Iw = element.section.Iw
-        
-    #     # Get local DOFs
-    #     local_dofs = self.extract_local_dofs(element, R)
-        
-    #     # Extract local DOFs
-    #     (u1, v1, w1, rx1, ry1, rz1, phi1,
-    #     u2, v2, w2, rx2, ry2, rz2, phi2) = local_dofs
-        
-    #     # Shape function derivatives for internal forces
-        
-    #     # 1. Axial Force (P)
-    #     # Derivative of axial shape functions (constant)
-    #     dNx1_dx = -1/L
-    #     dNx2_dx = 1/L
-        
-    #     # Axial force P = EA * du/dx
-    #     Fx = E * A * (dNx1_dx * u1 + dNx2_dx * u2)
-        
-    #     # 2. Torsional Moment (Mx)
-    #     # Derivative of torsional shape functions (constant)
-    #     dNrx1_dx = -1/L 
-    #     dNrx2_dx = 1/L
-        
-    #     # Torsional moment Mx = GJ * dθx/dx
-    #     Mx = G * J * (dNrx1_dx * rx1 + dNrx2_dx * rx2)
-        
-    #     # 3. Calculate second derivatives of bending shape functions
-    #     # For Hermite cubic shape functions
-        
-    #     # d²H1/dx²
-    #     d2H1_dx2 = -6/(L**2) * (1 - xi) + 12/(L**2) * xi
-    #     # d²H2/dx²
-    #     d2H2_dx2 = 6/(L**2) * (1 - xi) - 12/(L**2) * xi
-    #     # d²H3/dx²
-    #     d2H3_dx2 = -4/L * (1 - xi) + 6/L * xi
-    #     # d²H4/dx²
-    #     d2H4_dx2 = -2/L * (1 - xi) + 6/L * xi
-        
-    #     # 4. Bending Moments - using proper second derivatives
-    #     # Curvatures (second derivatives of displacement)
-    #     d2w_dx2 = d2H1_dx2 * w1 + d2H2_dx2 * w2 - d2H3_dx2 * ry1 - d2H4_dx2 * ry2
-    #     d2v_dx2 = d2H1_dx2 * v1 + d2H2_dx2 * v2 + d2H3_dx2 * rz1 + d2H4_dx2 * rz2
-        
-    #     # Bending moments (M = EI * curvature)
-    #     My = E * Iy * d2w_dx2
-    #     Mz = -E * Iz * d2v_dx2
-        
-    #     # 5. Shear Forces (V = dM/dx)
-    #     # Using curvature derivatives or directly from shape functions
-    #     Fy = -E * Iz * d2v_dx2
-    #     Fz = E * Iy * d2w_dx2
-        
-    #     # 6. Bimoment (Bw)
-    #     # Derivative of warping shape functions
-    #     dNphi1_dx = -1/L
-    #     dNphi2_dx = 1/L
-        
-    #     # Bimoment Bx = -EIw * dφ/dx
-    #     Bx = -E * Iw * (dNphi1_dx * phi1 + dNphi2_dx * phi2)
-        
-    #     return {
-    #         'Fx': Fx,
-    #         'Fy': Fy,
-    #         'Fz': Fz,
-    #         'Mx': Mx,
-    #         'My': My,
-    #         'Mz': Mz,
-    #         'Bm': Bx,
-    #         'pos': xi
-    #     }
-
     def compute_element_internal_forces(self, element_id, xi):
         """
-        Calculate interpolated internal forces at a point along the element
-        using simple linear interpolation from nodal forces.
+        Calculate interpolated internal forces at a point along the element using
+        element force recovery and shape function interpolation.
         
         Args:
             element_id: Element identifier
@@ -220,40 +126,49 @@ class Results:
         """
         element = self.assembler.frame.elements[element_id]
         R = element.initial_state['R']
+        L = element.initial_state['L']
         
         # Get local DOFs
         local_dofs = self.extract_local_dofs(element, R)
         
-        # Use the element's method to compute end forces
+        # Compute element end forces in local coordinates
         k_elastic = element.compute_elastic_stiffness_matrix()
         internal_forces_vector = k_elastic @ local_dofs
         
         # Extract nodal forces (end 1)
         Fx1 = -internal_forces_vector[0]
-        Fy1 =  internal_forces_vector[1]
-        Fz1 =  internal_forces_vector[2]
-        Mx1 =  internal_forces_vector[3]
+        Fy1 = -internal_forces_vector[1]
+        Fz1 = -internal_forces_vector[2]
+        Mx1 = -internal_forces_vector[3]
         My1 =  internal_forces_vector[4]
         Mz1 =  internal_forces_vector[5]
-        Bm1 =  internal_forces_vector[6]
+        Bm1 = -internal_forces_vector[6]
         
         # Extract nodal forces (end 2)
-        Fx2 =  internal_forces_vector[7]  # Negative for equilibrium
-        Fy2 = -internal_forces_vector[8]
-        Fz2 = -internal_forces_vector[9]
+        Fx2 =  internal_forces_vector[7]  
+        Fy2 =  internal_forces_vector[8]
+        Fz2 =  internal_forces_vector[9]
         Mx2 =  internal_forces_vector[10]
         My2 = -internal_forces_vector[11]
         Mz2 = -internal_forces_vector[12]
         Bm2 =  internal_forces_vector[13]
         
-        # Simple linear interpolation between end forces
-        Fx = (1 - xi) * Fx1 + xi * Fx2
-        Fy = (1 - xi) * Fy1 + xi * Fy2
-        Fz = (1 - xi) * Fz1 + xi * Fz2
-        Mx = (1 - xi) * Mx1 + xi * Mx2
-        My = (1 - xi) * My1 + xi * My2
-        Mz = (1 - xi) * Mz1 + xi * Mz2
-        Bm = (1 - xi) * Bm1 + xi * Bm2
+        # Use linear interpolation for simplicity 
+
+        # axial force
+        Fx = Fx1 * (1-xi) + Fx2 * xi
+        
+        # shear forces
+        Fy = Fy1 * (1-xi) + Fy2 * xi
+        Fz = Fz1 * (1-xi) + Fz2 * xi
+        
+        # bending moments
+        Mx = Mx1 * (1-xi) + Mx2 * xi
+        My = My1 * (1-xi) + My2 * xi 
+        Mz = Mz1 * (1-xi) + Mz2 * xi 
+        
+        # bimoment
+        Bm = Bm1 * (1-xi) + Bm2 * xi
         
         return {
             'Fx': Fx,
@@ -277,8 +192,6 @@ class Results:
                     'Mx', 'My', 'Mz', 'Bm')
             summary_type: Type of summary ('max', 'min', 'avg', 'range', 'all')
             
-        Returns:
-            dict: Summary of internal forces with requested statistics and all force values
         """
         # Validate inputs
         valid_force_types = ['all', 'Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz', 'Bm']
@@ -358,8 +271,6 @@ class Results:
     def process_element_forces(self, n_points=5, force_type='all', summary_type='max'):
         """
         Get summary of internal forces across all elements in the structure.
-        Finds the maximum, minimum, or other statistics for force values
-        across the entire structure and identifies which elements have these values.
         
         Args:
             n_points: Number of points to sample along each element 
@@ -367,9 +278,6 @@ class Results:
                     'Mx', 'My', 'Mz', 'Bm')
             summary_type: Type of summary ('max', 'min', 'avg', 'range', 'all')
             
-        Returns:
-            dict: Summary of internal forces with requested statistics for the entire structure,
-                including which elements have the extreme values
         """
         # Validate inputs
         valid_force_types = ['all', 'Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz', 'Bm']
