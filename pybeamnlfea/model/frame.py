@@ -61,6 +61,12 @@ class Frame:
         if name in self.sections:
             raise ValueError(f"Section '{name}' already exists")
         self.sections[name] = section
+
+    def reset_sections(self) -> None: 
+        """
+        Reseat all sections. 
+        """
+        self.sections = {} 
             
     def add_element(self, node_ids: List[int], material_name: str, section_name: str, element_class: Element = Element, element_id: int=None) -> Element:
         """Add an element to the frame, connecting specified nodes with given properties."""
@@ -93,6 +99,12 @@ class Frame:
         self.elements[element_id] = element
         
         return element
+    
+    def reset_elements(self) -> None: 
+        """
+        Reseat all elements. 
+        """
+        self.elements = {} 
     
     def add_elements(self, node_ids_list: List[list[int]], material_name: str, section_name: str, element_class=Element, element_id=None) -> None:
         """Add elements to the frame."""
@@ -127,6 +139,12 @@ class Frame:
         
         # Add the elastic support to the existing boundary condition
         self.boundary_conditions[node_id].add_elastic_support(dof_index, stiffness, prescribed_displacement)
+
+    def reset_boundary_conditions(self) -> None: 
+        """
+        Reseat all boundary conditions. 
+        """
+        self.boundary_conditions = {} 
         
     def add_nodal_load(self, node_id: int, forces: List[float], load_class=NodalLoad) -> None:
         """Add a load to a node IN THE GLOBAL COORDINATE SYSTEM."""
@@ -234,6 +252,12 @@ class Frame:
             self.self_weight += weight
         
             self.add_uniform_load(element_id, np.array(scale) * (weight / element.L), UniformLoad) 
+
+    def reset_loads(self) -> None: 
+        """
+        Reseat all loads. 
+        """
+        self.loads = {} 
 
     def update_state(self, global_displacements):
         """
