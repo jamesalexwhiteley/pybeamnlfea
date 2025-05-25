@@ -296,6 +296,77 @@ class Frame:
         else:
             self.loads[node_j_id] = NodalLoad(node_j_id, global_force_j)
 
+    def add_uniform_moment(self, element_id: int, forces: List[float], load_class=UniformLoad) -> None:
+        """
+        Add a uniform load to an element IN GLOBAL COORDINATE SYSTEM.
+        
+        Args:
+            element_id: Element to apply the load to
+            forces: [mx, my, mz] intensities in global coordinates (moment per unit length)
+                - mx: global X direction 
+                - my: global Y direction 
+                - mz: global Z direction 
+        """
+        if element_id not in self.elements:
+            raise ValueError(f"Element {element_id} not found in the frame")
+        
+        # # Store the uniform load object
+        # if not hasattr(self, 'uniform_loads'):
+        #     self.uniform_loads = {}
+        # self.uniform_loads[element_id] = load_class(element_id, forces)
+        
+        # Get element information
+        element = self.elements[element_id]
+        node_i_id, node_j_id = element.nodes[0].id, element.nodes[1].id
+        length = element.L
+        
+        # Get global components
+        mx_global, my_global, mz_global = forces
+        
+        # Transform global loads to local coordinates
+        T = element.compute_transformation_matrix()
+        T_load = T[4:7, 4:7] 
+        
+        # Global force vector -> local force vector
+        global_load_vector = np.array([mx_global, my_global, mz_global])
+        local_load_vector = T_load.T @ global_load_vector  # Transpose for global->local
+        mx, my, mz = local_load_vector
+        
+        # Calculate nodal forces and moments in local coordinates
+        local_force_i = np.zeros(7)  # [Fx, Fy, Fz, Mx, My, Mz, Bx]
+        local_force_j = np.zeros(7)
+        
+        # mx load
+        local_force_i[3] = mx 
+        local_force_j[3] = mx 
+        
+        # my load 
+        local_force_i[4] = -my # Mz at node i 
+        local_force_j[4] =  my # Mz at node j 
+        
+        # mz load 
+        local_force_i[5] = -mz # My at node i
+        local_force_j[5] =  mz # My at node j
+        
+        # Transform local forces back to global coordinates
+        T_i = T[:7, :7] 
+        T_j = T[7:, 7:] 
+        
+        # Transform local forces -> global coordinates
+        global_force_i = T_i @ local_force_i
+        global_force_j = T_j @ local_force_j
+
+        # Add or update existing nodal loads in global coordinates
+        if node_i_id in self.loads:
+            self.loads[node_i_id].force_vector += global_force_i
+        else:
+            self.loads[node_i_id] = NodalLoad(node_i_id, global_force_i)
+        
+        if node_j_id in self.loads:
+            self.loads[node_j_id].force_vector += global_force_j
+        else:
+            self.loads[node_j_id] = NodalLoad(node_j_id, global_force_j)
+
     def get_self_weight(self) -> float: 
         """Return self weight of frame object."""
         if self.self_weight == 0: 
