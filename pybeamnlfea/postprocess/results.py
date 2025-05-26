@@ -312,74 +312,48 @@ class Results:
             )
             element_results[elem_id] = element_forces
         
-        # Find global extremes for each force type
         for force in force_types_to_process:
-            # Collect maximum values from each element
-            max_values = {}
-            min_values = {}
+            # Collect ALL values from ALL elements (not just max/min per element)
             all_values = []
+            value_locations = []  # Store (elem_id, position, value) tuples
             
-            # Collect data from all elements
             for elem_id, elem_result in element_results.items():
-                max_val = elem_result[f"{force}_max"]
-                min_val = elem_result[f"{force}_min"]
-                max_pos = elem_result[f"{force}_max_position"]
-                min_pos = elem_result[f"{force}_min_position"]
+                # Get all sampled values for this element
+                element_values = elem_result[force]  # List of values at n_points
+                xi_points = elem_result['xi_points']
                 
-                max_values[elem_id] = {
-                    'value': max_val, 
-                    'position': max_pos
-                }
-                
-                min_values[elem_id] = {
-                    'value': min_val, 
-                    'position': min_pos
-                }
-                
-                # Add all values for calculating global average
-                all_values.extend(elem_result[force])
+                for i, val in enumerate(element_values):
+                    all_values.append(val)
+                    value_locations.append((elem_id, xi_points[i], val))
             
-            # Find global maximum
-            global_max_elem_id = max(max_values, key=lambda k: abs(max_values[k]['value']))
-            global_max_value = max_values[global_max_elem_id]['value']
-            global_max_position = max_values[global_max_elem_id]['position']
+            # Find true global max and min
+            global_max_value = max(all_values)
+            global_min_value = min(all_values)
             
-            # Find global minimum
-            global_min_elem_id = min(min_values, key=lambda k: min_values[k]['value'])
-            global_min_value = min_values[global_min_elem_id]['value']
-            global_min_position = min_values[global_min_elem_id]['position']
+            # Find locations of global extrema
+            max_location = next(loc for loc in value_locations if loc[2] == global_max_value)
+            min_location = next(loc for loc in value_locations if loc[2] == global_min_value)
             
-            # Calculate global average
-            global_avg = sum(all_values) / len(all_values) if all_values else 0
-            
-            # Calculate global range
-            global_range = global_max_value - global_min_value
-            
-            # Store results for this force type
+            # Store results
             if summary_type == 'max' or summary_type == 'all':
                 result[f"{force}_max"] = {
                     'value': global_max_value,
-                    'element_id': global_max_elem_id,
-                    'position': global_max_position
-                }
-                
-                # Also store absolute max
-                abs_max_elem_id = max(max_values, key=lambda k: abs(max_values[k]['value']))
-                abs_max_value = max_values[abs_max_elem_id]['value']
-                abs_max_position = max_values[abs_max_elem_id]['position']
-                
-                result[f"{force}_abs_max"] = {
-                    'value': abs_max_value,
-                    'element_id': abs_max_elem_id,
-                    'position': abs_max_position
+                    'element_id': max_location[0],
+                    'position': max_location[1]
                 }
             
             if summary_type == 'min' or summary_type == 'all':
                 result[f"{force}_min"] = {
                     'value': global_min_value,
-                    'element_id': global_min_elem_id,
-                    'position': global_min_position
+                    'element_id': min_location[0], 
+                    'position': min_location[1]
                 }
+
+            # Calculate global average
+            global_avg = sum(all_values) / len(all_values) if all_values else 0
+            
+            # Calculate global range
+            global_range = global_max_value - global_min_value
             
             if summary_type == 'avg' or summary_type == 'all':
                 result[f"{force}_avg"] = global_avg
