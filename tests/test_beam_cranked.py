@@ -22,10 +22,10 @@ beam.add_elements([[i, i+1] for i in range(n*2)], "material", "section", element
 
 # Add boundary conditions and loads
 beam.add_boundary_condition(0, [0, 0, 0, 0, 0, 0, 1], BoundaryCondition) 
-beam.add_boundary_condition(n*2, [0, 0, 0, 1, 1, 1, 1], BoundaryCondition) 
-beam.add_nodal_load(n, [0, 0, -1, 0, 0, 0, 0], NodalLoad) 
+# beam.add_boundary_condition(n*2, [0, 0, 0, 1, 1, 1, 1], BoundaryCondition) 
+beam.add_nodal_load(n*2, [0, 0, -1, 0, 0, 0, 0], NodalLoad) 
 
 # Solve the model
 results = beam.solve() 
 print(results.get_nodal_forces(0)) 
-beam.show_deformed_shape(cross_section_scale=0.75) 
+beam.show_deformed_shape(scale=0.5, cross_section_scale=0.75) 

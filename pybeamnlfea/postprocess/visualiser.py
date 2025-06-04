@@ -334,8 +334,7 @@ class Visualiser:
     
     def plot_force_field(self, force_type='Fx', scale=1.0, npoints=10, line_width=3, show_values=True, value_frequency=5):
             """
-            Visualize force fields (e.g., axial force, bending moment, shear) along beam elements.
-            NOTE THIS FEATURE IS A WORK IN PROGRESS
+            Visualize force fields (e.g., axial force, bending moment, shear) along beam elements NOTE: work-in-progress.
             
             Args:
                 force_type: Type of force to visualise ('Fx', 'Fy', 'Fz', 'Mx', 'My', 'Mz', 'Bx')
@@ -520,7 +519,7 @@ class Visualiser:
     def save(self, filename, dpi=300):
         """Save the current plot to a file."""
         if self.fig is not None:
-            plt.tight_layout()
+            plt.tight_layout()  
             plt.savefig(filename, dpi=dpi)
             print(f"Plot saved to {filename}")
         else:
