@@ -1,3 +1,3 @@
 # PyBeamNLFEA
 
-Geometrically Non-linear Finite Element Analysis for Thin Walled Beams and Frames
+Geometrically non-linear finite element analysis for thin walled beams and frames 
