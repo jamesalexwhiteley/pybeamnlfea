@@ -16,7 +16,6 @@ from scipy.sparse import lil_matrix, csr_matrix, bmat
 from scipy.sparse.linalg import eigsh
 from scipy.linalg import eigh
 
-
 def thin_wall_stiffness_matrix_ltb(E, G, A, Iy, Iz, Iw, J, L, 
                                     My=0, Mz=0,
                                     include_elastic=True, include_geometric=True):
@@ -62,18 +61,31 @@ def thin_wall_stiffness_matrix_ltb(E, G, A, Iy, Iz, Iw, J, L,
         add_sym(10, 12, 6*E*Iy/L**2)
         add_sym(12, 12, 4*E*Iy/L)
         
-        # Torsion (DOFs 4,7,11,14)
-        # Using exact St. Venant torsion (not the 6/5 approximation)
-        add_sym(4, 4, 12*E*Iw/L**3 + G*J/L)
-        add_sym(4, 7, 6*E*Iw/L**2)
-        add_sym(4, 11, -12*E*Iw/L**3 - G*J/L)
-        add_sym(4, 14, 6*E*Iw/L**2)
-        add_sym(7, 7, 4*E*Iw/L + G*J*L/3)
-        add_sym(7, 11, -6*E*Iw/L**2)
-        add_sym(7, 14, 2*E*Iw/L - G*J*L/6)
-        add_sym(11, 11, 12*E*Iw/L**3 + G*J/L)
-        add_sym(11, 14, -6*E*Iw/L**2)
-        add_sym(14, 14, 4*E*Iw/L + G*J*L/3)
+        # # Torsion (DOFs 4,7,11,14)
+        # # Using exact St. Venant torsion (not 6/5 values)
+        # add_sym(4, 4, 12*E*Iw/L**3 + G*J/L)
+        # add_sym(4, 7, 6*E*Iw/L**2)
+        # add_sym(4, 11, -12*E*Iw/L**3 - G*J/L)
+        # add_sym(4, 14, 6*E*Iw/L**2)
+        # add_sym(7, 7, 4*E*Iw/L + G*J*L/3)
+        # add_sym(7, 11, -6*E*Iw/L**2)
+        # add_sym(7, 14, 2*E*Iw/L - G*J*L/6)
+        # add_sym(11, 11, 12*E*Iw/L**3 + G*J/L)
+        # add_sym(11, 14, -6*E*Iw/L**2)
+        # add_sym(14, 14, 4*E*Iw/L + G*J*L/3)
+
+        # Chan–Kitipornchai consistent (6/5 exact)
+        add_sym(4, 4, 12*E*Iw/L**3 + 6*G*J/(5*L))
+        add_sym(4, 7, 6*E*Iw/L**2 + G*J/10)
+        add_sym(4, 11, -12*E*Iw/L**3 - 6*G*J/(5*L))
+        add_sym(4, 14, 6*E*Iw/L**2 + G*J/10)
+        add_sym(7, 7, 4*E*Iw/L + 2*G*J*L/15)
+        add_sym(7, 11, -6*E*Iw/L**2 - G*J/10)
+        add_sym(7, 14, 2*E*Iw/L - G*J*L/30)
+        add_sym(11, 11, 12*E*Iw/L**3 + 6*G*J/(5*L))
+        add_sym(11, 14, -6*E*Iw/L**2 - G*J/10)
+        add_sym(14, 14, 4*E*Iw/L + 2*G*J*L/15)
+
     
     if include_geometric:
         # LTB coupling from My (bending about y, strong axis)
@@ -287,75 +299,99 @@ def solve_ltb_eigenvalue(Ke, Kg, n_modes=5):
 
 def main():
     print("=" * 70)
-    print("LTB Eigenvalue Analysis - Validation Test")
+    print("LTB eigenvalue analysis")
     print("=" * 70)
     
     # Beam properties
-    L = 20.0  # m
-    n_elements = 10
+    L = 1  # m
+    n_elements = 2
     
     # Material
-    E = 210e9   # Pa
-    G = 80e9    # Pa
+    # E = 210e9   # Pa
+    # G = 80e9    # Pa
+    E = 1   
+    G = 1    
     
     # Section (narrow rectangle - prone to LTB)
-    b = 0.05    # m (width - weak direction)
-    d = 0.5     # m (depth - strong direction)
+    # b = 0.05    # m (width - weak direction)
+    # d = 0.5     # m (depth - strong direction)
+    # b = 1    # m (width - weak direction)
+    # d = 1     # m (depth - strong direction)
     
-    A = b * d
-    Iy = b * d**3 / 12  # Strong axis
-    Iz = b**3 * d / 12  # Weak axis
-    J = b**3 * d / 3    # Torsion constant (approximate for thin rectangle)
+    # A = b * d
+    # Iy = b * d**3 / 12  # Strong axis
+    # Iz = b**3 * d / 12  # Weak axis
+    # J = b**3 * d / 3    # Torsion constant (approximate for thin rectangle)
+    # Iw = 0              # No warping for rectangle
+
+    A =  1
+    Iy = 1  # Strong axis
+    Iz = 1 # Weak axis
+    J =  1    # Torsion constant (approximate for thin rectangle)
     Iw = 0              # No warping for rectangle
     
-    print(f"\nBeam: L = {L} m, {n_elements} elements")
-    print(f"Section: {b*1000:.0f}mm x {d*1000:.0f}mm")
-    print(f"  A  = {A:.6e} m²")
-    print(f"  Iy = {Iy:.6e} m⁴ (strong)")
-    print(f"  Iz = {Iz:.6e} m⁴ (weak)")
-    print(f"  J  = {J:.6e} m⁴")
+    # print(f"\nBeam: L = {L} m, {n_elements} elements")
+    # print(f"Section: {b*1000:.0f}mm x {d*1000:.0f}mm")
+    # print(f"  A  = {A:.6e} m²")
+    # print(f"  Iy = {Iy:.6e} m⁴ (strong)")
+    # print(f"  Iz = {Iz:.6e} m⁴ (weak)")
+    # print(f"  J  = {J:.6e} m⁴")
     
     # Analytical solution for simply-supported beam under uniform moment
     # M_cr = (π/L) * sqrt(E*Iz * G*J)
     M_cr_analytical = (np.pi / L) * np.sqrt(E * Iz * G * J)
     
-    print(f"\nAnalytical LTB critical moment:")
-    print(f"  M_cr = (π/L) * √(E·Iz·G·J)")
-    print(f"  M_cr = {M_cr_analytical:.4e} Nm")
-    print(f"       = {M_cr_analytical/1e6:.2f} MNm")
+    # print(f"\nAnalytical LTB critical moment:")
+    # print(f"  M_cr = (π/L) * √(E·Iz·G·J)")
+    # print(f"  M_cr = {M_cr_analytical:.4e} Nm")
+    # print(f"       = {M_cr_analytical/1e6:.2f} MNm")
     
     # Assemble with unit moment (λ will be the critical moment)
     My_unit = 1.0
     Ke, Kg = assemble_global_matrices(n_elements, L, E, G, A, Iy, Iz, Iw, J,
                                        My_distribution='constant', My_max=My_unit)
     
-    print(f"\nGlobal matrices assembled:")
-    print(f"  Size: {Ke.shape}")
+    # np.set_printoptions(
+    #     linewidth=200,   # increase line width
+    #     precision=3,     # decimals
+    #     suppress=True    # scientific notation
+    # )
+    # print(np.asarray((Ke + Kg).todense()))
+
+    # print(f"\nGlobal matrices assembled:")
+    # print(f"  Size: {Ke.shape}")
     
     # Apply boundary conditions
     n_nodes = n_elements + 1
     Ke_red, Kg_red, free_dofs = apply_simply_supported_bc(Ke, Kg, n_nodes)
+
+    np.set_printoptions(
+        linewidth=200,   # increase line width
+        precision=3,     # decimals
+        suppress=True    # scientific notation
+    )
+    print(np.asarray((Ke_red + Kg_red).todense()))
     
-    print(f"  After BC: {Ke_red.shape}")
-    print(f"  Free DOFs: {len(free_dofs)}")
+    # print(f"  After BC: {Ke_red.shape}")
+    # print(f"  Free DOFs: {len(free_dofs)}")
     
-    # Check matrices
-    print(f"\nMatrix diagnostics:")
-    print(f"  Ke symmetric: {np.allclose(Ke_red.toarray(), Ke_red.toarray().T)}")
-    print(f"  Kg symmetric: {np.allclose(Kg_red.toarray(), Kg_red.toarray().T)}")
-    print(f"  Ke positive definite: {np.all(np.linalg.eigvalsh(Ke_red.toarray()) > 0)}")
+    # # Check matrices
+    # print(f"\nMatrix diagnostics:")
+    # print(f"  Ke symmetric: {np.allclose(Ke_red.toarray(), Ke_red.toarray().T)}")
+    # print(f"  Kg symmetric: {np.allclose(Kg_red.toarray(), Kg_red.toarray().T)}")
+    # print(f"  Ke positive definite: {np.all(np.linalg.eigvalsh(Ke_red.toarray()) > 0)}")
     
     # Check for LTB coupling in Kg
     Kg_dense = Kg_red.toarray()
-    print(f"  Kg has non-zero off-diagonal: {np.any(np.abs(Kg_dense - np.diag(np.diag(Kg_dense))) > 1e-12)}")
+    # print(f"  Kg has non-zero off-diagonal: {np.any(np.abs(Kg_dense - np.diag(np.diag(Kg_dense))) > 1e-12)}")
     
     # Solve eigenvalue problem
-    print("\nSolving eigenvalue problem...")
-    eigenvalues, eigenvectors = solve_ltb_eigenvalue(Ke_red, Kg_red, n_modes=5)
+    # print("\nSolving eigenvalue problem...")
+    eigenvalues, eigenvectors = solve_ltb_eigenvalue(Ke_red, Kg_red, n_modes=2)
     
-    print("\n" + "=" * 70)
-    print("Results:")
-    print("=" * 70)
+    # print("\n" + "=" * 70)
+    # print("Results:")
+    # print("=" * 70)
     
     for i, lam in enumerate(eigenvalues):
         M_cr_fem = lam * My_unit
@@ -366,10 +402,10 @@ def main():
         M_cr_analytical_n = n * (np.pi / L) * np.sqrt(E * Iz * G * J)
         error_n = abs(M_cr_fem - M_cr_analytical_n) / M_cr_analytical_n * 100
         
-        print(f"\nMode {n}:")
-        print(f"  FEM M_cr     = {M_cr_fem:.4e} Nm ({M_cr_fem/1e6:.2f} MNm)")
-        print(f"  Analytical   = {M_cr_analytical_n:.4e} Nm ({M_cr_analytical_n/1e6:.2f} MNm)")
-        print(f"  Error        = {error_n:.2f}%")
+        # print(f"\nMode {n}:")
+        # print(f"  FEM M_cr     = {M_cr_fem:.4e} Nm ({M_cr_fem/1e6:.2f} MNm)")
+        # print(f"  Analytical   = {M_cr_analytical_n:.4e} Nm ({M_cr_analytical_n/1e6:.2f} MNm)")
+        # print(f"  Error        = {error_n:.2f}%")
     
     return eigenvalues, M_cr_analytical
 

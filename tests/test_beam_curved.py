@@ -31,7 +31,7 @@ beam.add_elements([[i, i+1] for i in range(nelems)], "material", "section", elem
 
 # Add boundary conditions and loads
 beam.add_boundary_condition(0, [0, 0, 0, 0, 0, 0, 1], BoundaryCondition) 
-beam.add_nodal_load(nelems, [0, 0, -0.1, 0, 0, 0, 0], NodalLoad) 
+beam.add_nodal_load(nelems, [0, 0, -0.5, 1, 0, 0, 0], NodalLoad) 
 
 # Solve the model
 results = beam.solve() 

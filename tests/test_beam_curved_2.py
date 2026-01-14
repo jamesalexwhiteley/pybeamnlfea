@@ -11,7 +11,7 @@ from pybeamnlfea.model.load import NodalLoad
 # Create a beam structure 
 beam = Frame() 
 
-nelems = 15
+nelems = 20
 radius = 1 
 theta_max = np.pi 
 nodes = []
@@ -34,13 +34,13 @@ beam.add_boundary_condition(0, [0, 0, 0, 0, 0, 0, 1], BoundaryCondition)
 beam.add_boundary_condition(nelems, [0, 0, 0, 0, 0, 0, 1], BoundaryCondition) 
 
 # Add gravity load 
-beam.add_gravity_load([0, 0, 0.1])
+beam.add_gravity_load([0, 0, -0.1])
 
 # Solve the model
 results = beam.solve() 
 beam.show_deformed_shape() 
 
 # Linear buckling analysis 
-beam.solve_eigen(num_modes=10)
+beam.solve_eigen(num_modes=2)
 beam.show_mode_shapes(scale=1.0)
 

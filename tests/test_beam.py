@@ -1,0 +1,48 @@
+import numpy as np
+from pybeamnlfea.model.frame import Frame
+from pybeamnlfea.model.material import LinearElastic
+from pybeamnlfea.model.section import Section 
+from pybeamnlfea.model.element import ThinWalledBeamElement 
+from pybeamnlfea.model.boundary import BoundaryCondition 
+from pybeamnlfea.model.load import NodalLoad 
+
+# Author: James Whiteley (github.com/jamesalexwhiteley)
+
+# Create a beam structure 
+n = 10
+beam = Frame() 
+beam.add_nodes([[i/n, i/n, 0] for i in range(n+1)])
+# beam.add_nodes([[0, i/n, 0] for i in range(n+1)])
+# beam.add_nodes([[i/n, 0, 0] for i in range(n+1)])
+
+# Steel properties
+E = 210e9   # N/m2
+G = 80e9    # N/m2 
+rho = 7850  # kg/m3
+
+# UB127x76x13 section properties
+A = 1650e-6    # m2
+Iy = 0.746e-6  # m4 
+Iz = 0.147e-6  # m4
+J = 0.0285e-6  # m4
+Iw = 0.002e-12 # m6
+
+beam.add_material("steel", LinearElastic(rho=rho, E=E, G=G))
+beam.add_section("UB127x76x13", Section(A=A, Iy=Iy, Iz=Iz, J=J, Iw=Iw, y0=0, z0=0))
+
+# Add element 
+beam.add_elements([[i, i+1] for i in range(n)], "steel", "UB127x76x13", element_class=ThinWalledBeamElement) 
+
+# Add boundary conditions; Global (ux, uy, uz, θx, θy, θz, φ); 0=fixed, 1=free 
+beam.add_boundary_condition(0, [0, 0, 0, 0, 0, 0, 0], BoundaryCondition) 
+beam.add_boundary_condition(n, [0, 0, 0, 0, 0, 0, 0], BoundaryCondition)
+
+# Add loads; Global (ux, uy, uz, θx, θy, θz, φ)
+beam.add_nodal_load(n/2, [0, -1e6, 0, 0, 0, 0, 0], NodalLoad) 
+# beam.add_gravity_load()
+
+# Solve the model
+results = beam.solve() 
+# print(results.get_nodal_forces(0)) 
+print(results.get_nodal_displacements(n/2)) 
+beam.show_deformed_shape(scale=1, cross_section_scale=0.5) 
