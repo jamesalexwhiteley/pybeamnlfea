@@ -367,13 +367,13 @@ class ThinWalledBeamElement(Element):
         return C
 
     def compute_transformation_matrix(self):
-        """Compute the transformation matrix T = (CQC^-1)^-1."""
-        # C = self.compute_controid_transformation_matrix()
-        # Q = self.compute_local_to_global_transformation_matrix()
-        # self.T = np.linalg.inv(C @ Q @ np.linalg.inv(C))   
+        """Compute the transformation matrix."""
 
-        self.T = self.compute_local_to_global_transformation_matrix()                       # NOTE OKAY only for symmetric sections  
-        # print("NO transformation matrix")
+        C = self.compute_controid_transformation_matrix()
+        Q = self.compute_local_to_global_transformation_matrix()
+        self.T = C @ np.linalg.solve(Q, np.linalg.inv(C))  # CQ^-1C^-1
+
+        self.T = self.compute_local_to_global_transformation_matrix()           # NOTE OKAY FOR SYMMETRIC SECTIONS ONLY  
         # self.T = np.eye(14)
  
         return self.T

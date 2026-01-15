@@ -11,12 +11,12 @@ from pybeamnlfea.model.load import NodalLoad
 # Create a beam structure 
 beam = Frame() 
 
-nelems = 20
+n = 20
 radius = 1 
 theta_max = np.pi 
 nodes = []
-for i in range(nelems + 1):
-    theta = (i / nelems) * theta_max  
+for i in range(n + 1):
+    theta = (i / n) * theta_max  
     x = radius * np.cos(theta)  
     y = radius * np.sin(theta)  
     nodes.append([x, y, 0])  
@@ -27,20 +27,19 @@ beam.add_material("material", LinearElastic(rho=1, E=1, G=1))
 beam.add_section("section", Section(A=1, Iy=1, Iz=1, J=1, Iw=1, y0=0, z0=0)) 
 
 # Add element 
-beam.add_elements([[i, i+1] for i in range(nelems)], "material", "section", element_class=ThinWalledBeamElement) 
+beam.add_elements([[i, i+1] for i in range(n)], "material", "section", element_class=ThinWalledBeamElement) 
 
 # Add boundary conditions and loads
 beam.add_boundary_condition(0, [0, 0, 0, 0, 0, 0, 1], BoundaryCondition) 
-beam.add_boundary_condition(nelems, [0, 0, 0, 0, 0, 0, 1], BoundaryCondition) 
+beam.add_boundary_condition(n, [0, 0, 0, 0, 0, 0, 1], BoundaryCondition) 
+beam.add_nodal_load(n/2, [0, 0, -1, 0, 0, 0, 0], NodalLoad) 
 
-# Add gravity load 
-beam.add_gravity_load([0, 0, -0.1])
+# Support torsion  
+torsion_analytic = 1 * (1 / 2 - 1 / np.pi)  # test_beam.pdf 
 
 # Solve the model
 results = beam.solve() 
+torsion_fea = results.get_nodal_forces(0)[4]
+print(f"torsion analytic = {torsion_analytic:.4e} Nm | torsion fea = {torsion_fea:.4e} Nm | error = {(np.abs(torsion_fea - torsion_analytic)) / torsion_analytic * 100:.4f} %") 
 beam.show_deformed_shape() 
-
-# Linear buckling analysis 
-beam.solve_eigen(num_modes=2)
-beam.show_mode_shapes(scale=1.0)
 

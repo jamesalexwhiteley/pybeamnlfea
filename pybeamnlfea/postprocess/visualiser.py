@@ -39,7 +39,17 @@ class Visualiser:
         self.ax.xaxis.pane.set_edgecolor('w')
         self.ax.yaxis.pane.set_edgecolor('w')
         self.ax.zaxis.pane.set_edgecolor('w')
+
+        # self.ax.grid(False)
+        # self.ax.set_xticklabels([])
+        # self.ax.set_yticklabels([])
+        # self.ax.set_zticklabels([])
             
+        self.ax.xaxis.line.set_color('gray')
+        self.ax.yaxis.line.set_color('gray')
+        self.ax.zaxis.line.set_color('gray')
+        self.ax.tick_params(colors='gray')
+
         return self.fig, self.ax
     
     def draw_local_axes(self, origin, R, scale=0.2, linewidth=2, labels=True):
@@ -95,7 +105,7 @@ class Visualiser:
                 line_style = 'k-'
             self.ax.plot([start_node.coords[0], end_node.coords[0]],
                          [start_node.coords[1], end_node.coords[1]],
-                         [start_node.coords[2], end_node.coords[2]], line_style, lw=1, alpha=0.7)
+                         [start_node.coords[2], end_node.coords[2]], line_style, lw=1, alpha=0.5)
             
             # Plot local axes at midpoint
             if show_local_axes: 
@@ -105,9 +115,9 @@ class Visualiser:
             # Plot nodes
             if nodes: 
                 self.ax.scatter(start_node.coords[0], start_node.coords[1], start_node.coords[2], 
-                            color='gray', s=20, alpha=0.7)
+                            color='gray', s=7.5, alpha=0.5)
                 self.ax.scatter(end_node.coords[0], end_node.coords[1], end_node.coords[2], 
-                            color='gray', s=20, alpha=0.7)
+                            color='gray', s=7.5, alpha=0.5)
             
             # Add node labels 
             if node_labels:
@@ -296,7 +306,7 @@ class Visualiser:
                             rect1[k_next], 
                             rect2[k_next],
                             rect2[k]
-                        ]], alpha=0.6)
+                        ]], alpha=0.7)
                         
                         # Color based on displacement magnitude
                         # color = plt.cm.Blues(avg_disp)
@@ -304,6 +314,7 @@ class Visualiser:
                         
                         quad.set_facecolor(color)
                         quad.set_edgecolor('gray')
+                        quad.set_linewidth(0.5)  
                         self.ax.add_collection3d(quad)
             
             # Show local axes if requested
@@ -511,6 +522,15 @@ class Visualiser:
             plt.tight_layout()
             # plt.axis('off') 
             plt.axis('equal') 
+
+            # # view etc.
+            # self.ax.view_init(elev=20, azim=-15)  # elevation and azimuth angles
+            # xl, yl, zl = self.ax.get_xlim(), self.ax.get_ylim(), self.ax.get_zlim()
+            # xf, yf, zf = 0.6, 1.0, 1.0  # factor; smaller = more zoomed
+            # self.ax.set_xlim(xl[0]*xf, xl[1]*xf)
+            # self.ax.set_ylim(yl[0]*yf, yl[1]*yf)
+            # self.ax.set_zlim(zl[0]*zf, zl[1]*zf)
+
             plt.show()
             self.fig, self.ax = None, None 
         else:

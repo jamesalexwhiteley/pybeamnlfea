@@ -8,64 +8,8 @@ import numpy as np
 
 # Author: James Whiteley (github.com/jamesalexwhiteley) 
 
-# # Create a beam structure 
-# n = 15
-# L = 10 # m 
-# beam = Frame() 
-# beam.add_nodes([[i*L/n, 0, 0] for i in range(n+1)])
-# # beam.add_nodes([[0, i*L/n, 0] for i in range(n+1)])
-
-# # Steel properties
-# E = 210e9   # N/m2
-# G = 80e9    # N/m2 
-# rho = 7850  # kg/m3
-
-# # # Rectangular section (no warping) 
-# # b, d = 0.05, 0.5 # m 
-# # A = b*d          # m2
-# # Iy = b*d**3/12   # m4
-# # Iz = b**3*d/12   # m4
-# # J = d**3/3 * (b-0.63*d*(1-d**4/(12*b**4))) # m4
-# # Iw = 0           # m6  
-
-# # UB127x76x13 section (warping)
-# A = 1650e-6    # m2
-# Iy = 0.746e-6  # m4 
-# Iz = 0.147e-6  # m4
-# J = 0.0285e-6  # m4 
-# Iw = 0.002e-12 # m6         
-
-# beam.add_material("steel", LinearElastic(rho=rho, E=E, G=G))
-# beam.add_section("rectangular", Section(A=A, Iy=Iy, Iz=Iz, J=J, Iw=Iw, y0=0, z0=0))
-
-# # Add element 
-# beam.add_elements([[i, i+1] for i in range(n)], "steel", "rectangular", element_class=ThinWalledBeamElement) 
-
-# # Add boundary conditions 
-# beam.add_boundary_condition(0, [0, 0, 0, 0, 1, 1, 1], BoundaryCondition)
-# beam.add_boundary_condition(n, [1, 0, 0, 0, 1, 1, 1], BoundaryCondition)
-
-# # Add loads (pure bending)
-# beam.add_nodal_load(0, [0, 0, 0, 0, 1, 0, 0], NodalLoad)
-# beam.add_nodal_load(n, [0, 0, 0, 0, -1, 0, 0], NodalLoad)
-
-# # # Linear solver 
-# # results = beam.solve() 
-# # beam.show_deformed_shape(scale=1e4, cross_section_scale=5) 
-
-# # Linear eigenvalue analysis 
-# eigenvalues, eigenvectors = beam.solve_eigen(num_modes=3) 
-# for n in range(len(eigenvalues)):
-#     factor = eigenvalues[n]
-#     analytic = (n+1) * (np.pi / L) * np.sqrt(E * Iz * G * J)
-#     print(f"Mode {n+1}: Critical factor = {factor:.4e} | Analytic M0cr = {analytic} | Error = {(np.abs(factor - analytic)) / analytic * 100:.2f} %") # analytic solution (no warping) 
-#     # print(f"Mode {n+1}: Critical load factor = {eigenvalues[n]:.4e} | Analytic M0cr = {(n+1) * (np.pi/(2*L)) * np.sqrt(E*Iz * G*J) * np.sqrt(1 + (np.pi/(2*L))**2 * (E*Iw/G*J))}")
-#     mode_shape = eigenvectors[n]    
-#     beam.show_mode_shape(mode_shape, scale=2, cross_section_scale=5)
-
-
 # Create a beam structure 
-n = 15
+n = 20
 L = 10 # m 
 beam = Frame() 
 beam.add_nodes([[i*L/n, 0, 0] for i in range(n+1)])
@@ -84,12 +28,15 @@ rho = 7850  # kg/m3
 # J = d**3/3 * (b-0.63*d*(1-d**4/(12*b**4))) # m4
 # Iw = 0           # m6  
 
-# UB127x76x13 section (warping)
-A = 1650e-6    # m2
-Iz = 0.746e-6  # m4 # Iz Iy reversed 
-Iy = 0.147e-6  # m4
-J = 0.0285e-6  # m4 
-Iw = 0.002e-12 # m6         
+# # UB127x76x13 section (warping)
+# A = 1650e-6    # m2
+# Iz = 0.746e-6  # m4 
+# Iy = 0.147e-6  # m4
+# J = 0.0285e-6  # m4 
+# Iw = 0.002e-12 # m6         
+
+rho, E, G = 1, 1, 1
+A, Iy, Iz, J, Iw = 1, 1, 1, 1, 0
 
 beam.add_material("steel", LinearElastic(rho=rho, E=E, G=G))
 beam.add_section("rectangular", Section(A=A, Iy=Iy, Iz=Iz, J=J, Iw=Iw, y0=0, z0=0))
@@ -102,46 +49,27 @@ beam.add_boundary_condition(0, [0, 0, 0, 0, 1, 1, 1], BoundaryCondition)
 beam.add_boundary_condition(n, [1, 0, 0, 0, 1, 1, 1], BoundaryCondition)
 
 # Add loads (pure bending)
-beam.add_nodal_load(0, [0, 0, 0, 0, 0, 1, 0], NodalLoad)
-beam.add_nodal_load(n, [0, 0, 0, 0, 0, -1, 0], NodalLoad)
+beam.add_nodal_load(0, [0, 0, 0, 0, 1, 0, 0], NodalLoad)
+beam.add_nodal_load(n, [0, 0, 0, 0, -1, 0, 0], NodalLoad)
+
 
 # # Linear solver 
 # results = beam.solve() 
-# beam.show_deformed_shape(scale=1e4, cross_section_scale=5) 
+# beam.show_deformed_shape(scale=1e-3, cross_section_scale=5) 
 
 # Linear eigenvalue analysis 
-eigenvalues, eigenvectors = beam.solve_eigen(num_modes=3) 
+eigenvalues, eigenvectors = beam.solve_eigen(num_modes=4) 
 for n in range(len(eigenvalues)):
     factor = eigenvalues[n]
-    analytic = (n+1) * (np.pi / L) * np.sqrt(E * Iy * G * J)
-    print(f"Mode {n+1}: Critical factor = {factor:.4e} | Analytic M0cr = {analytic} | Error = {(np.abs(factor - analytic)) / analytic * 100:.2f} %") # analytic solution (no warping) 
-    # print(f"Mode {n+1}: Critical load factor = {eigenvalues[n]:.4e} | Analytic M0cr = {(n+1) * (np.pi/(2*L)) * np.sqrt(E*Iz * G*J) * np.sqrt(1 + (np.pi/(2*L))**2 * (E*Iw/G*J))}")
-    mode_shape = eigenvectors[n]    
-    beam.show_mode_shape(mode_shape, scale=2, cross_section_scale=5)
+    # load_analytic = (n+1) * (np.pi / L) * np.sqrt(E * Iz * G * J)  # analytic solution (no warping) 
+    load_analytic = (n+1) * (np.pi / L) * np.sqrt(E * Iz * G * J) * np.sqrt(1 + (np.pi / L)**2 * (E * Iw / G * J))  # analytic solution (warping) 
+    error = (np.abs(eigenvalues[n] - load_analytic)) / load_analytic * 100
+    print(f"mode {n+1}: m0cr analytic = {load_analytic:.4e} | m0cr fea {factor:.4e} | error = {error:.2f} %") 
+    beam.show_mode_shape(eigenvectors[n], scale=5, cross_section_scale=5)
 
-
-
-
-
-
-
-# beam.solve()
-# beam.show_deformed_shape(scale=1)
-
-# beam.add_boundary_condition(0, [0, 0, 0, 0, 1, 1, 0], BoundaryCondition) 
-# beam.add_boundary_condition(n, [1, 0, 0, 1, 1, 1, 0], BoundaryCondition) 
-
-# Add load
-# beam.add_gravity_load([0, 1e-6, 1])
+# # Stratford and Burgoyne
+# beam.add_gravity_load([0, 0, -1])
 # w = beam.get_self_weight()
-# for i in range(n): 
-#     beam.add_uniform_load(i, [0, 0, 1], UniformLoad)
 # w = 1.0 * L
-
-# # Linear analysis 
-# results = beam.solve()
-# print(results.get_nodal_displacements(10))
-# beam.show_deformed_shape(scale=1) 
-
 # coeff = val * w / ((G * J * E * Iy)**0.5 / L**3)
-# print(f"Mode {i+1}: wcr={w * val} coeff={coeff}") # wcr = 28.5 (Stratford and Burgoyne)
+# print(f"Mode {i+1}: wcr={w * val} coeff={coeff}") # wcr = 28.5

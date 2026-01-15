@@ -9,7 +9,7 @@ from pybeamnlfea.model.load import NodalLoad
 # Author: James Whiteley (github.com/jamesalexwhiteley)
 
 # Create a beam structure 
-n = 2
+n = 5
 beam = Frame() 
 beam.add_nodes([[i/n, 0, 0] for i in range(n)] + [[1.0, i/n, 0] for i in range(n+1)])
 
@@ -22,10 +22,12 @@ beam.add_elements([[i, i+1] for i in range(n*2)], "material", "section", element
 
 # Add boundary conditions and loads
 beam.add_boundary_condition(0, [0, 0, 0, 0, 0, 0, 1], BoundaryCondition) 
-# beam.add_boundary_condition(n*2, [0, 0, 0, 1, 1, 1, 1], BoundaryCondition) 
-beam.add_nodal_load(n*2, [0, 0, -1, 0, 0, 0, 0], NodalLoad) 
+beam.add_boundary_condition(n*2, [0, 0, 0, 1, 1, 1, 1], BoundaryCondition) 
+beam.add_nodal_load(n, [0, 0, -1, 0, 0, 0, 0], NodalLoad) 
 
 # Solve the model
 results = beam.solve() 
-print(results.get_nodal_forces(0)) 
-beam.show_deformed_shape(scale=0.5, cross_section_scale=0.75) 
+moment_fea = results.get_nodal_forces(0)[4]
+moment_analytic = -5/7  # test_beam.pdf 
+print(f"moment analytic = {moment_analytic:.4e} Nm | moment fea = {moment_fea:.4e} Nm | error = {(np.abs(moment_fea - moment_analytic)) / moment_analytic * 100:.4f} %") 
+beam.show_deformed_shape(scale=1, cross_section_scale=0.75) 

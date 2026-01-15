@@ -291,7 +291,7 @@ from scipy.sparse import lil_matrix
 
 #     return K.tocsr()
 
-from scipy.sparse import lil_matrix
+# from scipy.sparse import lil_matrix
 
 # def thin_wall_stiffness_matrix(E, G, A, Iy, Iz, Iw, J, L, 
 #                                 P=0, My1=0, My2=0, Mz1=0, Mz2=0,
@@ -444,7 +444,7 @@ from scipy.sparse import lil_matrix
 
 #     return K.tocsr()
 
-from scipy.sparse import lil_matrix
+# from scipy.sparse import lil_matrix
 
 def thin_wall_stiffness_matrix(E, G, A, Iy, Iz, Iw, J, L, 
                                 P=0, My1=0, My2=0, Mz1=0, Mz2=0,
@@ -506,7 +506,7 @@ def thin_wall_stiffness_matrix(E, G, A, Iy, Iz, Iw, J, L,
         set_symmetric(6, 6, 4*E*Iz/L)
         set_symmetric(13, 13, 4*E*Iz/L)
         set_symmetric(6, 13, 2*E*Iz/L)
-    
+
     # =========================================================================
     # GEOMETRIC STIFFNESS MATRIX 
     # =========================================================================
@@ -546,21 +546,21 @@ def thin_wall_stiffness_matrix(E, G, A, Iy, Iz, Iw, J, L,
         set_symmetric(5, 5, 2*P*L/15)
         set_symmetric(5, 7, -2*P*y0*L/15 - L*(3*Mz1 - Mz2)/30)
         set_symmetric(5, 9, P/10)
-        set_symmetric(5, 11, -(1/10)*(P*y0 - Mz2 + Vy*L))  # SIGN FIX: was +
+        set_symmetric(5, 11, (1/10)*(P*y0 - Mz2 - Vy*L))
         set_symmetric(5, 12, -P*L/30)
         set_symmetric(5, 14, L*(2*P*y0 + Mz1 - Mz2 - Vy*L)/60)
         
         set_symmetric(6, 6, 2*P*L/15)
         set_symmetric(6, 7, -2*P*z0*L/15 + L*(3*My1 - My2)/30)
         set_symmetric(6, 9, -P/10)
-        set_symmetric(6, 11, -(1/10)*(P*z0 + My1 + Vz*L))  # SIGN FIX: was +
+        set_symmetric(6, 11, -(1/10)*(P*z0 + My1 + Vz*L))  
         set_symmetric(6, 13, -P*L/30)
         set_symmetric(6, 14, L*(2*P*z0 - My1 + My2 - Vz*L)/60)
         
         set_symmetric(7, 7, 2*P*r1*L/15 + beta_z*L*(3*Mz1 - Mz2)/30
                       - beta_y*L*(3*My1 - My2)/30 + 2*Mw*beta_w*L/15)
-        set_symmetric(7, 9, -(1/10)*(P*z0 + My1 - Vz*L))  # SIGN FIX: was +
-        set_symmetric(7, 10, (1/10)*(P*y0 - Mz1 - Vy*L))  # SIGN FIX: was -
+        set_symmetric(7, 9, -(1/10)*(P*z0 + My1 - Vz*L))  
+        set_symmetric(7, 10, (1/10)*(P*y0 - Mz1 - Vy*L))  
         set_symmetric(7, 11, -(1/10)*(P*r1 - Mz2*beta_z + My2*beta_y + Mw*beta_w))
         set_symmetric(7, 12, L*(2*P*y0 + Mz1 - Mz2 + Vy*L)/60)
         set_symmetric(7, 13, L*(2*P*z0 - My1 + My2 + Vz*L)/60)
@@ -568,19 +568,19 @@ def thin_wall_stiffness_matrix(E, G, A, Iy, Iz, Iw, J, L,
                       + beta_y*L*(My1 - My2)/60 + Mw*beta_w*L/30)
         
         set_symmetric(9, 9, 6*P/(5*L))
-        set_symmetric(9, 11, -6*P*z0/(5*L) + 3*(My1 - My2)/(5*L) - Vz/2)  # SIGN FIX: was -3*
+        set_symmetric(9, 11, -6*P*z0/(5*L) + 3*(My1 - My2)/(5*L) - Vz/2) 
         set_symmetric(9, 13, -P/10)
         set_symmetric(9, 14, (1/10)*(P*z0 - My1 + Vz*L))
         
         set_symmetric(10, 10, 6*P/(5*L))
-        set_symmetric(10, 11, 6*P*y0/(5*L) - 3*(Mz1 - Mz2)/(5*L) + Vy/2)  # SIGN FIX: was +3*
+        set_symmetric(10, 11, 6*P*y0/(5*L) + 3*(Mz1 - Mz2)/(5*L) + Vy/2)  
         set_symmetric(10, 12, P/10)
         set_symmetric(10, 14, -(1/10)*(P*y0 + Mz1 + Vy*L))
         
         set_symmetric(11, 11, 6*P*r1/(5*L) + 3*beta_z*(Mz1 - Mz2)/(5*L)
                       - 3*beta_y*(My1 - My2)/(5*L) + (Vz*z0 + Vy*y0)/2
                       + 6*Mw*beta_w/(5*L))
-        set_symmetric(11, 12, (1/10)*(P*y0 + Mz2 - Vy*L))
+        set_symmetric(11, 12, (1/10)*(P*y0 - Mz2 - Vy*L)) 
         set_symmetric(11, 13, (1/10)*(P*z0 - My1 - Vz*L))
         set_symmetric(11, 14, -(1/10)*(P*r1 + Mz1*beta_z - My1*beta_y + Mw*beta_w))
         
@@ -594,3 +594,40 @@ def thin_wall_stiffness_matrix(E, G, A, Iy, Iz, Iw, J, L,
                       - beta_y*L*(My1 - 3*My2)/30 + 2*Mw*beta_w*L/15)
 
     return K.tocsr()
+
+if __name__ == "__main__":
+
+    # Stiffness matrix
+    Ke = thin_wall_stiffness_matrix(E=1, G=1, A=1, Iy=1, Iz=1, Iw=0, J=1, L=1, 
+                                P=0, My1=0, My2=0, Mz1=0, Mz2=0,
+                                Mw=0, y0=0, z0=0, beta_y=0, beta_z=0, beta_w=0, r1=0,
+                                # Vy=0, Vz=0,
+                                include_elastic=True, include_geometric=True)
+    
+    K  = thin_wall_stiffness_matrix(E=1, G=1, A=1, Iy=1, Iz=1, Iw=0, J=1, L=1,  
+                                P=0, My1=1, My2=-1, Mz1=0, Mz2=0,
+                                Mw=0, y0=0, z0=0, beta_y=0, beta_z=0, beta_w=0, r1=0,
+                                # Vy=0, Vz=0,
+                                include_elastic=True, include_geometric=True)
+    Kg = K - Ke
+    
+    # Save to file
+    import os
+    
+    def dict_to_string(sparse_dict):
+        """Convert sparse dictionary to formatted string"""
+        lines = []
+        for (i, j), value in sparse_dict.items():
+            if abs(value) > 1e-10: # filter out near-zero values
+                lines.append(f"K[{i+1}, {j+1}] = {value:.6e}")
+        return "\n".join(lines)
+    
+    # Create output directory
+    output_dir = "output_files"
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Write to file
+    file_path = os.path.join(output_dir, "stiffness_matrix.txt")
+    with open(file_path, 'w') as f:
+        f.write(dict_to_string(K.todok()))
+    
