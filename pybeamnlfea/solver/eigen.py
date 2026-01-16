@@ -23,17 +23,6 @@ class EigenSolver(LinearSolver):
             Km = assembler.assemble_stiffness_matrix(geometric_stiffness=False)
             Kg = Ktot - Km
 
-            # print("=" * 70)
-            # print("Test local stiffness matrix")
-            # print("=" * 70)
-
-            # np.set_printoptions(
-            #     linewidth=200,   # increase line width
-            #     precision=3,     # decimals
-            #     suppress=True    # scientific notation
-            # )
-            # print(np.asarray(Ktot.todense()))
-
             # |Km − PKg| = 0 can be rearranged to |A − (1/λ)I| = 0 where A = Km^-1 @ Kg 
             A = spsolve(Km.tocsc(), (Kg + 1e-10 * eye(Kg.shape[0])).tocsc())
             eigenvalues, eigenvectors = eigs(csc_matrix(A), k=self.num_modes, which='LR')
@@ -56,80 +45,6 @@ class EigenSolver(LinearSolver):
             buckling_modes.append(mode_displacements)
             
         return critical_loads, buckling_modes
-
-# class EigenSolver(LinearSolver):
-#     def __init__(self, num_modes=5, solver_type='direct'):
-#         super().__init__(solver_type=solver_type)
-#         self.num_modes = num_modes
-
-#     def solve_eigen(self, assembler):
-#         """
-#         Solve (Ke + λ Kg) φ = 0
-#         consistent with solve_ltb_eigenvalue
-#         """
-
-#         # 1. Linear analysis → internal forces
-#         nodal_displacements, _ = self.solve(assembler)
-#         element_internal_forces = self._calculate_element_internal_forces(
-#             assembler, nodal_displacements
-#         )
-
-#         try:
-#             # 2. Assemble matrices
-#             Ke = assembler.assemble_stiffness_matrix(
-#                 geometric_stiffness=False
-#             ).tocsc()
-
-#             Ktot = assembler.assemble_stiffness_matrix(
-#                 geometric_stiffness=True,
-#                 element_internal_forces=element_internal_forces
-#             ).tocsc()
-
-#             Kg = Ke - Ktot
-
-#             # 3. Form A = Ke^{-1} Kg
-#             # (small diagonal shift for numerical stability)
-#             eps = 1e-10
-#             A = spsolve(Ke + eps * eye(Ke.shape[0]), Kg)
-
-#             # 4. Eigenvalue solve
-#             eigenvalues_mu, eigenvectors = eigs(
-#                 csc_matrix(A),
-#                 k=self.num_modes * 2,     # oversample
-#                 which='LM'
-#             )
-
-#             eigenvalues_mu = np.real(eigenvalues_mu)
-#             eigenvectors = np.real(eigenvectors)
-
-#             # 5. Filter negative μ → positive λ
-#             neg_mask = eigenvalues_mu < -1e-12
-#             mu_neg = eigenvalues_mu[neg_mask]
-#             vecs_neg = eigenvectors[:, neg_mask]
-
-#             if len(mu_neg) == 0:
-#                 raise RuntimeError("No compressive buckling modes found")
-
-#             lambdas = -1.0 / mu_neg
-
-#             # 6. Sort by smallest positive λ (critical load)
-#             idx = np.argsort(lambdas)
-#             lambdas = lambdas[idx][:self.num_modes]
-#             vecs = vecs_neg[:, idx][:, :self.num_modes]
-
-#         except Exception as e:
-#             print(f"EigenSolver failed with error message: {e}")
-#             return [], []
-
-#         # 7. Eigenvectors → nodal displacement fields
-#         buckling_modes = []
-#         for i in range(len(lambdas)):
-#             mode_disp = self._get_nodal_displacements(
-#                 assembler, vecs[:, i]
-#             )
-#             buckling_modes.append(mode_disp)
-
-#         return lambdas, buckling_modes
     
     def _calculate_element_internal_forces(self, assembler, nodal_displacements):                
         """Calculate internal forces for each element based on global displacements."""

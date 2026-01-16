@@ -52,7 +52,6 @@ beam.add_boundary_condition(n, [1, 0, 0, 0, 1, 1, 1], BoundaryCondition)
 beam.add_nodal_load(0, [0, 0, 0, 0, 1, 0, 0], NodalLoad)
 beam.add_nodal_load(n, [0, 0, 0, 0, -1, 0, 0], NodalLoad)
 
-
 # # Linear solver 
 # results = beam.solve() 
 # beam.show_deformed_shape(scale=1e-3, cross_section_scale=5) 
@@ -60,16 +59,8 @@ beam.add_nodal_load(n, [0, 0, 0, 0, -1, 0, 0], NodalLoad)
 # Linear eigenvalue analysis 
 eigenvalues, eigenvectors = beam.solve_eigen(num_modes=4) 
 for n in range(len(eigenvalues)):
-    factor = eigenvalues[n]
     # load_analytic = (n+1) * (np.pi / L) * np.sqrt(E * Iz * G * J)  # analytic solution (no warping) 
     load_analytic = (n+1) * (np.pi / L) * np.sqrt(E * Iz * G * J) * np.sqrt(1 + (np.pi / L)**2 * (E * Iw / G * J))  # analytic solution (warping) 
     error = (np.abs(eigenvalues[n] - load_analytic)) / load_analytic * 100
-    print(f"mode {n+1}: m0cr analytic = {load_analytic:.4e} | m0cr fea {factor:.4e} | error = {error:.2f} %") 
+    print(f"mode {n+1}: m0cr analytic = {load_analytic:.4e} | m0cr fea {eigenvalues[n]:.4e} | error = {error:.2f} %") 
     beam.show_mode_shape(eigenvectors[n], scale=5, cross_section_scale=5)
-
-# # Stratford and Burgoyne
-# beam.add_gravity_load([0, 0, -1])
-# w = beam.get_self_weight()
-# w = 1.0 * L
-# coeff = val * w / ((G * J * E * Iy)**0.5 / L**3)
-# print(f"Mode {i+1}: wcr={w * val} coeff={coeff}") # wcr = 28.5

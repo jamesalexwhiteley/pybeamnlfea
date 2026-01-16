@@ -288,12 +288,12 @@ class ThinWalledBeamElement(Element):
         # Vz2 = -internal_forces_vector[9]  # Shear in z at node 2
         
         # Moments about y-axis (bending in x-z plane)
-        My1 = -internal_forces_vector[4]   # Moment about y at node 1
-        My2 = -internal_forces_vector[11]  # Moment about y at node 2
+        My1 = -internal_forces_vector[4]  # Moment about y at node 1
+        My2 = -internal_forces_vector[11] # Moment about y at node 2
         
         # Moments about z-axis (bending in x-y plane)
         Mz1 = internal_forces_vector[5]   # Moment about z at node 1
-        Mz2 = internal_forces_vector[12] # Moment about z at node 2
+        Mz2 = internal_forces_vector[12]  # Moment about z at node 2
         
         # Bimoments (warping)
         B1 = internal_forces_vector[6]    # Bimoment at node 1
@@ -373,7 +373,7 @@ class ThinWalledBeamElement(Element):
         Q = self.compute_local_to_global_transformation_matrix()
         self.T = C @ np.linalg.solve(Q, np.linalg.inv(C))  # CQ^-1C^-1
 
-        self.T = self.compute_local_to_global_transformation_matrix()           # NOTE OKAY FOR SYMMETRIC SECTIONS ONLY  
+        # self.T = self.compute_local_to_global_transformation_matrix()           # NOTE OKAY FOR SYMMETRIC SECTIONS ONLY  
         # self.T = np.eye(14)
  
         return self.T

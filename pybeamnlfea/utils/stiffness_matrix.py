@@ -449,10 +449,11 @@ from scipy.sparse import lil_matrix
 def thin_wall_stiffness_matrix(E, G, A, Iy, Iz, Iw, J, L, 
                                 P=0, My1=0, My2=0, Mz1=0, Mz2=0,
                                 Mw=0, y0=0, z0=0, beta_y=0, beta_z=0, beta_w=0, r1=0,
-                                Vy=0, Vz=0,
+                                # Vy=0, Vz=0,
                                 include_elastic=True, include_geometric=True):
     
     K = lil_matrix((14, 14))
+    Vy, Vz = 0, 0
     
     def set_symmetric(i, j, value):
         K[i-1, j-1] = K[i-1, j-1] + value

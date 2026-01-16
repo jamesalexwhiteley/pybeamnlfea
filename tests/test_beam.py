@@ -46,5 +46,5 @@ disp_analytic = -5 * (rho * A * 9.81) * L**4 / (384 * E * Iy) # m
 # Solve the model 
 results = beam.solve() 
 disp_fea = results.get_nodal_displacements(n/2)[2]
-print(f"disp_z analytic = {disp_analytic * 1000:.4e} mm | disp_z fea = {disp_fea * 1000:.4e} mm | error = {(np.abs(disp_fea - disp_analytic)) / disp_analytic * 100:.4f} %") 
+print(f"disp analytic = {disp_analytic * 1000:.4e} mm | disp fea = {disp_fea * 1000:.4e} mm | error = {(np.abs(disp_fea - disp_analytic)) / disp_analytic * 100:.4f} %") 
 beam.show_deformed_shape(scale=100, cross_section_scale=2) 

@@ -11,7 +11,7 @@ import numpy as np
 # ======== Torsional displacement ======== #
 # Column 
 n = 10 
-L = 3.0
+L = 3  # short column 
 beam = Frame() 
 beam.add_nodes([[i*L/n, 0, 0] for i in range(n+1)])
 
@@ -38,15 +38,14 @@ beam.add_boundary_condition(n, [1, 1, 1, 1, 1, 1, 1], BoundaryCondition) # Free
 T = 1
 beam.add_nodal_load(n, [0, 0, 0, T, 0, 0, 0], NodalLoad)
 
-# Solve and show_deformed_shape deformed model 
-results = beam.solve() 
-# beam.show_deformed_shape(scale=2e2, show_undeformed=True, show_local_axes=False)
+# # Solve model 
+# results = beam.solve() 
+# beam.show_deformed_shape(scale=5e2, show_undeformed=True, show_local_axes=False)
 
-# check torsional displacement 
-torsional_disp = results.get_nodal_displacements(node_id=n, dof_ind=3)
-analytic_torsional_disp = T * L / (G * J)
-relative_error = abs(torsional_disp - analytic_torsional_disp) / analytic_torsional_disp * 100
-print(f"Precentage error in torsional displacement: {relative_error:.2f}%")
+# torsional_disp = results.get_nodal_displacements(node_id=n, dof_ind=3)
+# analytic_torsional_disp = T * L / (G * J)
+# error = abs(torsional_disp - analytic_torsional_disp) / analytic_torsional_disp * 100
+# print(f"error in torsional displacement: {error:.2f}%")
 
 # ======== Axial-torsional buckling ======== #
 # Cruciform column 
@@ -56,9 +55,9 @@ t = 0.007 # flange thickness (m)
 # Section properties 
 A = 4 * b * t   
 Iy = (2 * b * t**3) / 12 + (2 * t * b**3) / 12  
-Iz = 1e20 * Iy # NOTE set I >> J
+Iz = Iy 
 J = (4 * b * t**3) / 3  
-Iw = 0 # assumed 
+Iw = 0 
 
 # Create beam model 
 beam = Frame() 
@@ -69,23 +68,15 @@ beam.add_section("cruciform", Section(A=A, Iy=Iy, Iz=Iz, J=J, Iw=Iw, y0=0, z0=0)
 beam.add_elements([[i, i+1] for i in range(n)], "steel", "cruciform", element_class=ThinWalledBeamElement)
 
 # Add boundary conditions
-beam.add_boundary_condition(0, [0, 0, 0, 0, 0, 0, 0], BoundaryCondition) # Fixed 
-beam.add_boundary_condition(n, [1, 1, 1, 1, 1, 1, 1], BoundaryCondition) # Free 
+beam.add_boundary_condition(0, [0, 0, 0, 0, 0, 0, 0], BoundaryCondition) # fixed 
+[beam.add_boundary_condition(i+1, [1, 0, 0, 1, 0, 0, 1], BoundaryCondition) for i in range(n)]  # lateral modes constrained 
 
 # Apply end load
-P = 1e-4 
-beam.add_nodal_load(n, [-P, 0, 0, 1, 0, 0, 0], NodalLoad)
+beam.add_nodal_load(n, [-1, 0, 0, 0, 0, 0, 0], NodalLoad)
 
-eigenvalues, eigenvectors = beam.solve_eigen(num_modes=1)
-for i in range(len(eigenvalues)):
-    beam.show_mode_shape(eigenvectors[i], scale=10) # TODO check we are getting torsional mode 
-
-# TODO visualise displacement field (max, i.e. norm) + include cross_section_scale 
-
-# Analytical critical load 
-sigma_cr = G * (t/b)**2  
-P_cr_analytic = sigma_cr * A  
-
-print(f"\nAnalytical critical torsional buckling load:")
-print(f"P_cr = σ_cr A = G (t/b)^2 A = {P_cr_analytic:.4e} N")
-print(f"Ratio (FEA/Analytic): {eigenvalues[0]/P_cr_analytic:.4f}")
+eigenvalues, eigenvectors = beam.solve_eigen(num_modes=1)  # single torsional mode 
+for n in range(len(eigenvalues)):
+    load_analytic = G * J * A / (Iy + Iz)
+    error = (np.abs(eigenvalues[n] - load_analytic)) / load_analytic * 100
+    print(f"mode {n+1}: PcrT analytic = {load_analytic:.4e} | PcrT fea {eigenvalues[n]:.4e} | error = {error:.2f} %") 
+    beam.show_mode_shape(eigenvectors[n], scale=10) 
