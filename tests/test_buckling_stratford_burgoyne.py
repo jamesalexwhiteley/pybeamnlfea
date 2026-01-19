@@ -1,3 +1,9 @@
+"""
+Reproduce result from Stratford & Burgoyne (1999)
+"Lateral stability of long precast concrete beams" 
+
+"""
+
 from pybeamnlfea.model.frame import Frame
 from pybeamnlfea.model.material import LinearElastic
 from pybeamnlfea.model.section import Section 
@@ -32,9 +38,9 @@ beam.add_section("rectangular", Section(A=A, Iy=Iy, Iz=Iz, J=J, Iw=Iw, y0=0, z0=
 # Add element 
 beam.add_elements([[i, i+1] for i in range(n)], "steel", "rectangular", element_class=ThinWalledBeamElement) 
 
-# Add boundary conditions (simply supported)
-beam.add_boundary_condition(0, [0, 0, 0, 0, 1, 1, 0], BoundaryCondition)
-beam.add_boundary_condition(n, [1, 0, 0, 0, 1, 1, 0], BoundaryCondition)
+# Add boundary conditions; Global (ux, uy, uz, θx, θy, θz, φ); 0=fixed, 1=free; (simply supported)
+beam.add_boundary_condition(0, [0, 0, 0, 0, 1, 1, 1], BoundaryCondition)
+beam.add_boundary_condition(n, [1, 0, 0, 0, 1, 1, 1], BoundaryCondition)
 
 # Add loads (self weight)
 beam.add_gravity_load([0, 0, -1])
