@@ -22,10 +22,10 @@ rho = 7850  # kg/m3
 
 # UB127x76x13 section 
 A = 1650e-6    # m2
-Iy = 0.746e-6  # m4
-Iz = 0.147e-6  # m4
+Iy = 4.73e-6   # m4 
+Iz = 0.557e-6  # m4
 J = 0.0285e-6  # m4
-Iw = 0.002e-12 # m6
+Iw = 0.002e-6  # m6   
 
 beam.add_material("steel", LinearElastic(rho=rho, E=E, G=G))
 beam.add_section("UB127x76x13", Section(A=A, Iy=Iy, Iz=Iz, J=J, Iw=Iw, y0=0, z0=0))

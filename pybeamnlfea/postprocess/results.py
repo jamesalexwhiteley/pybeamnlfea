@@ -8,17 +8,45 @@ class Results:
     def __init__(self, assembler, global_displacements, global_forces=None):
         """
         Results class to store and process solution results.
-
         """
         self.assembler = assembler
         self.frame = assembler.frame
         self.global_displacements = global_displacements
         self.global_forces = global_forces
     
-    def extract_local_dofs(self, element, R):
+    # def extract_local_dofs(self, element, R):
+    #     """
+    #     Extract the 14 DOFs in local coordinates for an element
+    #     [[ux, uy, uz, θx, θy, θz, φ]_1, [ux, uy, uz, θx, θy, θz, φ]_2] 
+    #     """
+    #     # Get nodes
+    #     start_node, end_node = element.nodes
+    #     n1_id, n2_id = start_node.id, end_node.id
+        
+    #     # Collect global DOFs for both nodes
+    #     dof1_global = np.zeros(7)
+    #     dof2_global = np.zeros(7)
+        
+    #     # Fill in available displacements from dictionary
+    #     for dof_ind in range(7):  # Assuming 7 DOFs per node
+    #         dof1_global[dof_ind] = self.global_displacements.get((n1_id, dof_ind), 0.0)
+    #         dof2_global[dof_ind] = self.global_displacements.get((n2_id, dof_ind), 0.0)
+        
+    #     # Split into translations, rotations, and warping
+    #     t1g, r1g, w1g = dof1_global[:3], dof1_global[3:6], dof1_global[6]
+    #     t2g, r2g, w2g = dof2_global[:3], dof2_global[3:6], dof2_global[6]
+
+    #     # Transform translations and rotations to local coordinates
+    #     t1l = R.T @ t1g
+    #     t2l = R.T @ t2g
+    #     r1l = R.T @ r1g
+    #     r2l = R.T @ r2g
+
+    #     return np.hstack([t1l, r1l, w1g, t2l, r2l, w2g])
+
+    def extract_local_dofs(self, element, R=None):
         """
-        Extract the 14 DOFs in local coordinates for an element
-        [[ux, uy, uz, θx, θy, θz, φ]_1, [ux, uy, uz, θx, θy, θz, φ]_2] 
+        Extract the 14 DOFs in local coordinates for an element.
         """
         # Get nodes
         start_node, end_node = element.nodes
@@ -28,22 +56,21 @@ class Results:
         dof1_global = np.zeros(7)
         dof2_global = np.zeros(7)
         
-        # Fill in available displacements from dictionary
-        for dof_ind in range(7):  # Assuming 7 DOFs per node
+        for dof_ind in range(7):
             dof1_global[dof_ind] = self.global_displacements.get((n1_id, dof_ind), 0.0)
             dof2_global[dof_ind] = self.global_displacements.get((n2_id, dof_ind), 0.0)
         
-        # Split into translations, rotations, and warping
-        t1g, r1g, w1g = dof1_global[:3], dof1_global[3:6], dof1_global[6]
-        t2g, r2g, w2g = dof2_global[:3], dof2_global[3:6], dof2_global[6]
-
-        # Transform translations and rotations to local coordinates
-        t1l = R.T @ t1g
-        t2l = R.T @ t2g
-        r1l = R.T @ r1g
-        r2l = R.T @ r2g
-
-        return np.hstack([t1l, r1l, w1g, t2l, r2l, w2g])
+        # Combine into 14-element vector
+        global_dofs = np.concatenate([dof1_global, dof2_global])
+        
+        # Get the FULL transformation matrix (includes centroidal transform)
+        T = element.compute_transformation_matrix()
+        
+        # Transform global to local using T^(-1)
+        T_inv = np.linalg.inv(T)
+        local_dofs = T_inv @ global_dofs
+        
+        return local_dofs
     
     def shape_thin_walled_beam(self, xi, L, dof_loc):
         """

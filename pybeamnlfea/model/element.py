@@ -2,7 +2,7 @@ import numpy as np
 from pybeamnlfea.model.node import Node 
 from pybeamnlfea.model.material import Material 
 from pybeamnlfea.model.section import Section 
-from pybeamnlfea.utils.stiffness_matrix import thin_wall_stiffness_matrix
+from pybeamnlfea.utils.stiffness_matrix import thin_wall_stiffness_matrix_bazant, thin_wall_stiffness_matrix_chan
 
 # Author: James Whiteley (github.com/jamesalexwhiteley)
 
@@ -125,76 +125,65 @@ class ThinWalledBeamElement(Element):
         G = self.material.G
         L = self.L
         
-        # Elastic stiffness matrix (no geometric terms)
-        k_elastic = thin_wall_stiffness_matrix(
+        # Elastic stiffness matrix 
+        k_elastic = thin_wall_stiffness_matrix_bazant(
             E, G, A, Iy, Iz, Iw, J, L,
-            include_elastic=True, 
-            include_geometric=False
         )
         
         return k_elastic
 
-    def compute_geometric_stiffness_matrix(self, internal_forces):
-        """
-        Compute only the geometric stiffness matrix component.
+    # def compute_geometric_stiffness_matrix(self, internal_forces):
+    #     """
+    #     Compute only the geometric stiffness matrix component.
         
-        Args:
-            internal_forces : dict
-                Dictionary containing:
-                - 'axial' or 'P': Axial force
-                - 'moment_y1', 'moment_y2' or 'My1', 'My2': Moments about y at nodes 1, 2
-                - 'moment_z1', 'moment_z2' or 'Mz1', 'Mz2': Moments about z at nodes 1, 2
-                - 'shear_y' or 'Vy': Shear force in y direction
-                - 'shear_z' or 'Vz': Shear force in z direction
-                - 'bimoment' or 'Mw': Wagner moment / bimoment
+    #     Args:
+    #         internal_forces : dict
+    #             Dictionary containing:
+    #             - 'axial' or 'P': Axial force
+    #             - 'moment_y1', 'moment_y2' or 'My1', 'My2': Moments about y at nodes 1, 2
+    #             - 'moment_z1', 'moment_z2' or 'Mz1', 'Mz2': Moments about z at nodes 1, 2
+    #             - 'shear_y' or 'Vy': Shear force in y direction
+    #             - 'shear_z' or 'Vz': Shear force in z direction
+    #             - 'bimoment' or 'Mw': Wagner moment / bimoment
                 
-        Returns:
-            scipy.sparse.csr_matrix: 14x14 geometric stiffness matrix
-        """
-        L = self.L
-        geom = self._get_section_geometry()
+    #     Returns:
+    #         scipy.sparse.csr_matrix: 14x14 geometric stiffness matrix
+    #     """
+    #     L = self.L
+    #     geom = self._get_section_geometry()
         
-        # Extract forces with multiple possible key names
-        P = internal_forces.get('axial', internal_forces.get('P', 0))
+    #     # Extract forces with multiple possible key names
+    #     P = internal_forces.get('axial', internal_forces.get('P', 0))
         
-        My1 = internal_forces.get('moment_y1', internal_forces.get('My1', 0))
-        My2 = internal_forces.get('moment_y2', internal_forces.get('My2', 0))
-        Mz1 = internal_forces.get('moment_z1', internal_forces.get('Mz1', 0))
-        Mz2 = internal_forces.get('moment_z2', internal_forces.get('Mz2', 0))
+    #     My1 = internal_forces.get('moment_y1', internal_forces.get('My1', 0))
+    #     My2 = internal_forces.get('moment_y2', internal_forces.get('My2', 0))
+    #     Mz1 = internal_forces.get('moment_z1', internal_forces.get('Mz1', 0))
+    #     Mz2 = internal_forces.get('moment_z2', internal_forces.get('Mz2', 0))
         
-        Vy = internal_forces.get('shear_y', internal_forces.get('Vy', 0))
-        Vz = internal_forces.get('shear_z', internal_forces.get('Vz', 0))
+    #     # Vy = internal_forces.get('shear_y', internal_forces.get('Vy', 0))
+    #     # Vz = internal_forces.get('shear_z', internal_forces.get('Vz', 0))
         
-        Mw = internal_forces.get('bimoment', internal_forces.get('Mw', 0))
+    #     Mw = internal_forces.get('bimoment', internal_forces.get('Mw', 0))
         
-        # Geometric stiffness matrix only (dummy elastic params)
-        k_geom = thin_wall_stiffness_matrix(
-            E=1, G=1, A=1, Iy=1, Iz=1, Iw=1, J=1, L=L,
-            P=P, My1=My1, My2=My2, Mz1=Mz1, Mz2=Mz2,
-            Mw=Mw, 
-            y0=geom['y0'], z0=geom['z0'],
-            beta_y=geom['beta_y'], beta_z=geom['beta_z'], beta_w=geom['beta_w'],
-            r1=geom['r1'],
-            # Vy=Vy, Vz=Vz,
-            include_elastic=False,
-            include_geometric=True
-        )
+    #     # Geometric stiffness matrix only (dummy elastic params)
+    #     k_geom = thin_wall_stiffness_matrix(
+    #         E=1, G=1, A=1, Iy=1, Iz=1, Iw=1, J=1, L=L,
+    #         P=P, My1=My1, My2=My2, Mz1=Mz1, Mz2=Mz2,
+    #         Mw=Mw, 
+    #         y0=geom['y0'], z0=geom['z0'],
+    #         beta_y=geom['beta_y'], beta_z=geom['beta_z'], beta_w=geom['beta_w'],
+    #         r1=geom['r1'],
+    #         # Vy=Vy, Vz=Vz,
+    #         include_elastic=False,
+    #         include_geometric=True
+    #     )
         
-        return k_geom
+    #     return k_geom
 
     def compute_local_stiffness_matrix(self, include_geometric=False, internal_forces=None):
         """
         Compute local stiffness matrix with optional geometric effects.
-        
-        Args:
-            include_geometric : bool
-                If True, include geometric stiffness terms
-            internal_forces : dict, optional
-                Internal forces for geometric stiffness. Required if include_geometric=True.
-                See compute_geometric_stiffness_matrix for format.
-                
-        Returns:
-            scipy.sparse.csr_matrix: 14x14 element stiffness matrix
+
         """
         # Section and material properties
         A = self.section.A
@@ -210,11 +199,10 @@ class ThinWalledBeamElement(Element):
         # Get section geometry
         geom = self._get_section_geometry()
         
-        # Default force parameters
+        # Force parameters
         P = 0
         My1 = My2 = 0
         Mz1 = Mz2 = 0
-        # Vy = Vz = 0
         Mw = 0
         
         if include_geometric and internal_forces is not None:
@@ -226,23 +214,24 @@ class ThinWalledBeamElement(Element):
             Mz1 = internal_forces.get('moment_z1', internal_forces.get('Mz1', 0))
             Mz2 = internal_forces.get('moment_z2', internal_forces.get('Mz2', 0))
             
-            # Vy = internal_forces.get('shear_y', internal_forces.get('Vy', 0))
-            # Vz = internal_forces.get('shear_z', internal_forces.get('Vz', 0))
-            
             Mw = internal_forces.get('bimoment', internal_forces.get('Mw', 0))
         
         # Combined stiffness matrix
-        k = thin_wall_stiffness_matrix(
+        k = thin_wall_stiffness_matrix_chan(
             E, G, A, Iy, Iz, Iw, J, L,
-            P=P, My1=My1, My2=My2, Mz1=Mz1, Mz2=Mz2,
-            Mw=Mw,
+            P=P, My1=My1, My2=My2, Mz1=Mz1, Mz2=-Mz2, Mw=Mw,
             y0=geom['y0'], z0=geom['z0'],
             beta_y=geom['beta_y'], beta_z=geom['beta_z'], beta_w=geom['beta_w'],
             r1=geom['r1'],
-            # Vy=Vy, Vz=Vz,
-            include_elastic=True,
             include_geometric=include_geometric
         )
+
+        k = thin_wall_stiffness_matrix_bazant(
+                E, G, A, Iy, Iz, Iw, J, L, 
+                # P0=P, My0=(My1+My2)/2, Mz0=(Mz1+Mz2)/2, B0_bar=Mw,
+                P0=P, Mz0=(My1+My2), My0=(Mz1+Mz2), B0_bar=Mw,
+                W_bar=0, y0=geom['y0'], z0=geom['z0'], beta_y=geom['beta_y'], beta_z=geom['beta_z'], r=geom['r1']
+        )  
         
         return k
 
@@ -254,14 +243,7 @@ class ThinWalledBeamElement(Element):
             local_displacements : array-like
                 14-element array of local nodal displacements
                 [u1, v1, w1, θx1, θy1, θz1, φ1, u2, v2, w2, θx2, θy2, θz2, φ2]
-                
-        Returns:
-            dict: Internal forces at element ends and averaged values for Kg
-                - P: Average axial force
-                - My1, My2: Bending moments about y at nodes 1 and 2
-                - Mz1, Mz2: Bending moments about z at nodes 1 and 2
-                - Vy, Vz: Shear forces
-                - Mw: Wagner moment (average bimoment)
+            
         """
         import numpy as np
         local_displacements = np.asarray(local_displacements).flatten()
@@ -281,32 +263,23 @@ class ThinWalledBeamElement(Element):
         P1 = internal_forces_vector[0]    # Axial force at node 1
         P2 = -internal_forces_vector[7]   # Axial force at node 2 
         
-        # # Shear forces
-        # Vy1 = internal_forces_vector[1]   # Shear in y at node 1
-        # Vy2 = -internal_forces_vector[8]  # Shear in y at node 2
-        # Vz1 = internal_forces_vector[2]   # Shear in z at node 1
-        # Vz2 = -internal_forces_vector[9]  # Shear in z at node 2
-        
         # Moments about y-axis (bending in x-z plane)
-        My1 = -internal_forces_vector[4]  # Moment about y at node 1
+        My1 = internal_forces_vector[4]  # Moment about y at node 1
         My2 = -internal_forces_vector[11] # Moment about y at node 2
         
         # Moments about z-axis (bending in x-y plane)
         Mz1 = internal_forces_vector[5]   # Moment about z at node 1
-        Mz2 = internal_forces_vector[12]  # Moment about z at node 2
+        Mz2 = -internal_forces_vector[12]  # Moment about z at node 2 
         
         # Bimoments (warping)
         B1 = internal_forces_vector[6]    # Bimoment at node 1
         B2 = internal_forces_vector[13]   # Bimoment at node 2
         
-        # Average/representative values for geometric stiffness
+        # Average values 
         P = (P1 + P2) / 2
-        # Vy = (Vy1 + Vy2) / 2
-        # Vz = (Vz1 + Vz2) / 2
-        Mw = (B1 + B2) / 2  # Average bimoment as Wagner moment
+        Mw = (B1 + B2) / 2  
         
         return {
-            # Individual end values (for geometric stiffness)
             'axial': P,
             'P': P,
             'moment_y1': My1,
@@ -317,16 +290,9 @@ class ThinWalledBeamElement(Element):
             'moment_z2': Mz2,
             'Mz1': Mz1,
             'Mz2': Mz2,
-            # 'shear_y': Vy,
-            # 'Vy': Vy,
-            # 'shear_z': Vz,
-            # 'Vz': Vz,
             'bimoment': Mw,
             'Mw': Mw,
-            # Also include raw end forces for reference
             'P1': P1, 'P2': P2,
-            # 'Vy1': Vy1, 'Vy2': Vy2,
-            # 'Vz1': Vz1, 'Vz2': Vz2,
             'B1': B1, 'B2': B2
         }
     
@@ -343,39 +309,40 @@ class ThinWalledBeamElement(Element):
         Q = np.kron(I2, core_block)
         
         return Q
-    
-    def compute_controid_transformation_matrix(self): 
-        """Compute the -> centroidal system transformation matrix for this element."""
 
-        C = np.eye(14)  
+    def compute_centroidal_transformation_matrix(self): 
+        """
+        Compute the shear center -> centroid transformation matrix t
+        Based on Bazant 1973, Eq. 25-28
+    
+        """
+        t = np.eye(14)  
         
-        # Offset between shear center and centroid
-        y0 = self.section.y0  
-        z0 = self.section.z0  
+        y0 = getattr(self.section, 'y0', 0.0)
+        z0 = getattr(self.section, 'z0', 0.0)
         
-        # Non-zero off-diagonal terms 
-        C[2, 3] = y0 
-        C[5, 6] = y0 
-        C[9, 10] = y0 
-        C[12, 13] = y0  
+        # Node 1 (DOFs 0-6)
+        t[1, 3] = -z0   # v_centroid = v_shear - z0 * θx
+        t[2, 3] = y0    # w_centroid = w_shear + y0 * θx
         
-        C[1, 3] = z0 
-        C[4, 6] = z0  
-        C[8, 10] = z0  
-        C[11, 13] = z0  
+        # Node 2 (DOFs 7-13)
+        t[8, 10] = -z0
+        t[9, 10] = y0
         
-        return C
+        return t
 
     def compute_transformation_matrix(self):
-        """Compute the transformation matrix."""
-
-        C = self.compute_controid_transformation_matrix()
+        """
+        Compute the full transformation matrix T = t @ Q @ t^(-1)
+        Based on Bazant 1973, Eq. 27
+        """
+        t = self.compute_centroidal_transformation_matrix()
         Q = self.compute_local_to_global_transformation_matrix()
-        self.T = C @ np.linalg.solve(Q, np.linalg.inv(C))  # CQ^-1C^-1
+        t_inv = np.linalg.inv(t)
+        
+        self.T = t @ Q @ t_inv
+        # self.T = np.eye((14))
 
-        # self.T = self.compute_local_to_global_transformation_matrix()           # NOTE OKAY FOR SYMMETRIC SECTIONS ONLY  
-        # self.T = np.eye(14)
- 
         return self.T
 
     def update_state(self, displacements):

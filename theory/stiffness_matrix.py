@@ -3,7 +3,7 @@ import os
 
 # Author: James Whiteley (github.com/jamesalexwhiteley)
 
-# ============================================== #
+# ============================================== # 
 # Stiffness matrix 
 # ============================================== # 
 
@@ -254,9 +254,8 @@ for i in range(14):
             integrand = -B0*W*dNi*dNj 
             K[i,j] += sp.integrate(integrand, (z, 0, L))
 
-# print(K[5, 6])
-# sp.init_printing(use_unicode=True, fontsise='tiny')
-# sp.pprint(K)
+sp.init_printing(use_unicode=True, fontsise='tiny')
+sp.pprint(K)
 
 # def dict_to_string(dok_dict):
 #     value_groups = {}

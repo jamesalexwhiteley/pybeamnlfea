@@ -171,13 +171,21 @@ class Visualiser:
             elem_deformed_points = []
             elem_init_points = []  
             elem_torsion_angles = []
+
+            y0 = getattr(element.section, 'y0', 0.0)
+            z0 = getattr(element.section, 'z0', 0.0)
             
             for xi in xi_values:
                 # Evaluate shape functions
                 u_xl, v_yl, w_zl, rx_xl, phi_xl = self.results.shape_thin_walled_beam(xi, L, local_dofs)
                 
                 # Local displacement vector
-                local_disp = np.array([u_xl, v_yl, w_zl])
+                # local_disp = np.array([u_xl, v_yl, w_zl])
+                local_disp = np.array([
+                    u_xl,
+                    v_yl + z0 * rx_xl,  # v_centroid = v_shear + z0 * θx
+                    w_zl - y0 * rx_xl   # w_centroid = w_shear - y0 * θx
+                ])
                 
                 # Convert to global coordinates
                 global_disp = init_R.T @ local_disp
