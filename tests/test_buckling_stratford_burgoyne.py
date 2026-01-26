@@ -15,10 +15,10 @@ import numpy as np
 # Author: James Whiteley (github.com/jamesalexwhiteley) 
 
 # Create a beam structure 
-n = 2
+n = 2 
 L = 10 # m 
 beam = Frame() 
-beam.add_nodes([[i*L/n, 0, 0] for i in range(n+1)])
+beam.add_nodes([[i*L/n, 0, 0] for i in range(n+1)]) 
 
 # # Steel properties
 # E = 210e9   # N/m2
@@ -43,11 +43,14 @@ beam.add_section("rectangular", Section(A=A, Iy=Iy, Iz=Iz, J=J, Iw=Iw, y0=0, z0=
 beam.add_elements([[i, i+1] for i in range(n)], "steel", "rectangular", element_class=ThinWalledBeamElement) 
 
 # Add boundary conditions; Global (ux, uy, uz, θx, θy, θz, φ); 0=fixed, 1=free; (simply supported)
+# beam.add_boundary_condition(0, [0, 0, 0, 0, 1, 1, 1], BoundaryCondition)
+# beam.add_boundary_condition(n, [1, 0, 0, 0, 1, 1, 1], BoundaryCondition)
 beam.add_boundary_condition(0, [0, 0, 0, 0, 1, 1, 1], BoundaryCondition)
-beam.add_boundary_condition(n, [1, 0, 0, 0, 1, 1, 1], BoundaryCondition)
+beam.add_boundary_condition(n, [0, 0, 0, 0, 1, 1, 1], BoundaryCondition)
 
 # Add loads (self weight)
 beam.add_gravity_load([0, 0, -1])
+# [beam.add_uniform_load(element_id=e, forces=[0, 0, -1]) for e in range(n)] 
 
 # # Linear solver 
 # results = beam.solve() 
@@ -65,4 +68,4 @@ for n in range(len(eigenvalues)):
     
     error = (np.abs(wcr_fea - wcr_stratford)) / wcr_stratford * 100
     print(f"mode {n+1}: wcr analytic = {wcr_stratford:.4e} | wcr fea {wcr_fea:.4e} | error = {error:.2f} %")
-    beam.show_mode_shape(eigenvectors[n], scale=5, cross_section_scale=5/2)
+    beam.show_mode_shape(eigenvectors[n], scale=5, cross_section_scale=5)

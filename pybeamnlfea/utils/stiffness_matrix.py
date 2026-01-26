@@ -13,7 +13,6 @@ def thin_wall_stiffness_matrix_bazant(E, G, A, Iy, Iz, Iw, J, L,
     Create the element stiffness matrix for a 3D thin-walled beam element.
         
     """
-
     # Initialise a sparse matrix (using lil_matrix for efficient assembly)
     K = lil_matrix((14, 14))
     
@@ -34,8 +33,12 @@ def thin_wall_stiffness_matrix_bazant(E, G, A, Iy, Iz, Iw, J, L,
     
     set_symmetric(1, 3, -3*Mz0/(5*L) + 3*P0*z0/(5*L))
     set_symmetric(1, 10, 3*Mz0/(5*L) - 3*P0*z0/(5*L))
-    set_symmetric(8, 10, -3*Mz0/(5*L) + 3*P0*z0/(5*L))
+    set_symmetric(8, 10, -3*Mz0/(5*L) + 3*P0*z0/(5*L))   
     set_symmetric(3, 8, 3*Mz0/(5*L) - 3*P0*z0/(5*L))
+    # set_symmetric(1, 3, -5*Mz0/(5*L))
+    # set_symmetric(1, 10, 5*Mz0/(5*L))
+    # set_symmetric(8, 10, -5*Mz0/(5*L))
+    # set_symmetric(3, 8, 5*Mz0/(5*L))
     
     set_symmetric(1, 5, 6*E*Iz/(L**2) + P0/10)
     set_symmetric(1, 12, 6*E*Iz/(L**2) + P0/10)
@@ -59,15 +62,15 @@ def thin_wall_stiffness_matrix_bazant(E, G, A, Iy, Iz, Iw, J, L,
     
     set_symmetric(2, 3, 3*My0/(5*L) - 3*P0*y0/(5*L))
     set_symmetric(2, 10, -3*My0/(5*L) + 3*P0*y0/(5*L))
-    set_symmetric(3, 9, -3*My0/(5*L) - 3*P0*y0/(5*L))
-    set_symmetric(9, 10, 3*My0/(5*L) + 3*P0*y0/(5*L))
+    set_symmetric(3, 9, -3*My0/(5*L) + 3*P0*y0/(5*L))
+    set_symmetric(9, 10, 3*My0/(5*L) - 3*P0*y0/(5*L))
     
     set_symmetric(2, 4, -6*E*Iy/(L**2) - P0/10)
     set_symmetric(2, 11, -6*E*Iy/(L**2) - P0/10)
     set_symmetric(4, 9, 6*E*Iy/(L**2) + P0/10)
     set_symmetric(9, 11, 6*E*Iy/(L**2) + P0/10)
     
-    cross_term_val2 = -My0/20 - P0*y0/20
+    cross_term_val2 = -My0/20 + P0*y0/20
     set_symmetric(2, 6, cross_term_val2)
     set_symmetric(2, 13, -cross_term_val2)
     set_symmetric(9, 13, -cross_term_val2)
@@ -239,147 +242,213 @@ def thin_wall_stiffness_matrix_bazant(E, G, A, Iy, Iz, Iw, J, L,
 
 #     return K.tocsr()
 
-# def thin_wall_stiffness_matrix(E, G, A, Iy, Iz, Iw, J, L, 
+# def thin_wall_stiffness_matrix_bazant(E, G, A, Iy, Iz, Iw, J, L, 
 #                                 P0=0, My0=0, Mz0=0, B0_bar=0, 
-#                                 W_bar=0, y0=0, z0=0, beta_y=0, beta_z=0, r=0):
+#                                 W_bar=0, y0=0, z0=0, beta_y=0, beta_z=0, r=0,
+#                                 include_geometric=False
+#                                 ):
     
 #     """
 #     Create the element stiffness matrix for a 3D thin-walled beam element.
     
-#     Args:
-#         E : float
-#             Young's modulus
-#         G : float
-#             Shear modulus
-#         A : float
-#             Cross-sectional area
-#         Iy, Iz : float
-#             Second moments of area about y and z axes
-#         Iw : float
-#             Warping constant
-#         J : float
-#             Torsion constant
-#         L : float
-#             Element length
-#         P0 : float, optional
-#             Axial force
-#         My0, Mz0 : float, optional
-#             Bending moments about y and z axes
-#         B0_bar, W_bar : float, optional
-#             Bimoment and warping parameter 
-#         y0, z0 : float, optional
-#             Coordinates of the shear center
-#         beta_y, beta_z : float, optional
-#             Rotation Args:
-#         r : float, optional
-#             Polar radius of gyration
-        
+#     DOF order (0-indexed):
+#     Node 1: [u1, v1, w1, θx1, θy1, θz1, θx1']  = DOFs 0-6
+#     Node 2: [u2, v2, w2, θx2, θy2, θz2, θx2']  = DOFs 7-13
+    
 #     """
 
-#     # Initialise a sparse matrix (using lil_matrix for efficient assembly)
 #     K = lil_matrix((14, 14))
     
 #     def set_symmetric(i, j, value):
-#         K[i-1, j-1] = value
-#         if (i-1) != (j-1):
-#             K[j-1, i-1] = value
+#         K[i, j] = value
+#         if i != j:
+#             K[j, i] = value
+    
+#     # =========================================================================
+#     # ELASTIC STIFFNESS MATRIX 
+#     # =========================================================================
     
 #     # Axial terms
-#     set_symmetric(1, 1, A*E/L)
-#     set_symmetric(1, 8, -A*E/L)
-#     set_symmetric(8, 8, A*E/L)
+#     set_symmetric(0, 0, A*E/L)
+#     set_symmetric(0, 7, -A*E/L)
+#     set_symmetric(7, 7, A*E/L)
     
-#     # Z-direction bending terms
-#     set_symmetric(2, 2, 12*E*Iz/(L**3) + 6*P0/(5*L))
-#     set_symmetric(2, 9, -12*E*Iz/(L**3) - 6*P0/(5*L))
-#     set_symmetric(9, 9, 12*E*Iz/(L**3) + 6*P0/(5*L))
+#     # Z-direction bending (v displacement, θz rotation)
+#     set_symmetric(1, 1, 12*E*Iz/L**3)
+#     set_symmetric(1, 8, -12*E*Iz/L**3)
+#     set_symmetric(8, 8, 12*E*Iz/L**3)
     
-#     set_symmetric(2, 4, -3*Mz0/(5*L) + 3*P0*z0/(5*L))
-#     set_symmetric(2, 11, 3*Mz0/(5*L) - 3*P0*z0/(5*L))
-#     set_symmetric(9, 11, -3*Mz0/(5*L) + 3*P0*z0/(5*L))
-#     set_symmetric(4, 9, -3*Mz0/(5*L) + 3*P0*z0/(5*L))
+#     set_symmetric(1, 5, 6*E*Iz/L**2)
+#     set_symmetric(1, 12, 6*E*Iz/L**2)
+#     set_symmetric(5, 8, -6*E*Iz/L**2)
+#     set_symmetric(8, 12, -6*E*Iz/L**2)
     
-#     set_symmetric(2, 6, 6*E*Iz/(L**2) + P0/10)
-#     set_symmetric(2, 13, 6*E*Iz/(L**2) + P0/10)
-#     set_symmetric(6, 9, -6*E*Iz/(L**2) - P0/10)
-#     set_symmetric(9, 13, -6*E*Iz/(L**2) - P0/10)
+#     set_symmetric(5, 5, 4*E*Iz/L)
+#     set_symmetric(12, 12, 4*E*Iz/L)
+#     set_symmetric(5, 12, 2*E*Iz/L)
     
-#     cross_term_val = -Mz0/20 + P0*z0/20
-#     set_symmetric(2, 7, cross_term_val)
-#     set_symmetric(2, 14, cross_term_val)
-#     set_symmetric(9, 14, -cross_term_val)
-#     set_symmetric(6, 11, -cross_term_val)
-#     set_symmetric(4, 6, cross_term_val)
-#     set_symmetric(4, 13, cross_term_val)
-#     set_symmetric(7, 9, -cross_term_val)
-#     set_symmetric(11, 13, -cross_term_val)
+#     # Y-direction bending (w displacement, θy rotation)
+#     set_symmetric(2, 2, 12*E*Iy/L**3)
+#     set_symmetric(2, 9, -12*E*Iy/L**3)
+#     set_symmetric(9, 9, 12*E*Iy/L**3)
     
-#     # Y-direction bending terms
-#     set_symmetric(3, 3, 12*E*Iy/(L**3) + 6*P0/(5*L))
-#     set_symmetric(3, 10, -12*E*Iy/(L**3) - 6*P0/(5*L))
-#     set_symmetric(10, 10, 12*E*Iy/(L**3) + 6*P0/(5*L))
+#     set_symmetric(2, 4, -6*E*Iy/L**2)
+#     set_symmetric(2, 11, -6*E*Iy/L**2)
+#     set_symmetric(4, 9, 6*E*Iy/L**2)
+#     set_symmetric(9, 11, 6*E*Iy/L**2)
     
-#     set_symmetric(3, 4, -3*My0/(5*L) - 3*P0*y0/(5*L))
-#     set_symmetric(3, 11, 3*My0/(5*L) + 3*P0*y0/(5*L))
-#     set_symmetric(4, 10, -3*My0/(5*L) - 3*P0*y0/(5*L))
-#     set_symmetric(10, 11, 3*My0/(5*L) + 3*P0*y0/(5*L))
+#     set_symmetric(4, 4, 4*E*Iy/L)
+#     set_symmetric(11, 11, 4*E*Iy/L)
+#     set_symmetric(4, 11, 2*E*Iy/L)
     
-#     set_symmetric(3, 5, -6*E*Iy/(L**2) - P0/10)
-#     set_symmetric(3, 12, -6*E*Iy/(L**2) - P0/10)
-#     set_symmetric(5, 10, 6*E*Iy/(L**2) + P0/10)
-#     set_symmetric(10, 12, 6*E*Iy/(L**2) + P0/10)
+#     # Torsion and warping
+#     set_symmetric(3, 3, 12*E*Iw/L**3 + 6*G*J/(5*L))
+#     set_symmetric(3, 10, -12*E*Iw/L**3 - 6*G*J/(5*L))
+#     set_symmetric(10, 10, 12*E*Iw/L**3 + 6*G*J/(5*L))
     
-#     cross_term_val2 = -My0/20 - P0*y0/20
-#     set_symmetric(3, 7, cross_term_val2)
-#     set_symmetric(3, 14, cross_term_val2)
-#     set_symmetric(10, 14, -cross_term_val2)
-#     set_symmetric(4, 5, -cross_term_val2)
-#     set_symmetric(4, 12, -cross_term_val2)
-#     set_symmetric(11, 12, cross_term_val2)
-#     set_symmetric(5, 11, cross_term_val2)
-#     set_symmetric(7, 10, -cross_term_val2)
+#     set_symmetric(3, 6, 6*E*Iw/L**2 + G*J/10)
+#     set_symmetric(3, 13, 6*E*Iw/L**2 + G*J/10)
+#     set_symmetric(6, 10, -6*E*Iw/L**2 - G*J/10)
+#     set_symmetric(10, 13, -6*E*Iw/L**2 - G*J/10)
     
-#     # Warping and torsion terms
-#     warping_term = 12*E*Iw/(L**3) + 6*G*J/(5*L) + 6*P0*r**2/(5*L) + 3*Mz0*beta_z/(5*L) - 3*My0*beta_y/(5*L) - 6*B0_bar*W_bar/(5*L)
-#     set_symmetric(4, 4, warping_term)
-#     set_symmetric(4, 11, -warping_term)
-#     set_symmetric(11, 11, warping_term)
-    
-#     warping_term2 = 6*E*Iw/(L**2) + G*J/10 + P0*r**2/10 + Mz0*beta_z/20 - My0*beta_y/20 - B0_bar*W_bar/10
-#     set_symmetric(4, 7, warping_term2)
-#     set_symmetric(4, 14, warping_term2)
-#     set_symmetric(7, 11, -warping_term2)
-#     set_symmetric(11, 14, -warping_term2)
-    
-#     warping_term3 = 4*E*Iw/L + 2*G*J*L/15 + 2*L*P0*r**2/15 + L*Mz0*beta_z/15 - L*My0*beta_y/15 - 2*B0_bar*L*W_bar/15
-#     set_symmetric(7, 7, warping_term3)
-#     set_symmetric(14, 14, warping_term3)
-    
-#     warping_term4 = 2*E*Iw/L - G*J*L/30 - L*P0*r**2/30 - L*Mz0*beta_z/60 + L*My0*beta_y/60 + B0_bar*L*W_bar/30
-#     set_symmetric(7, 14, warping_term4)
+#     set_symmetric(6, 6, 4*E*Iw/L + 2*G*J*L/15)
+#     set_symmetric(13, 13, 4*E*Iw/L + 2*G*J*L/15)
+#     set_symmetric(6, 13, 2*E*Iw/L - G*J*L/30)
 
-#     # Additional terms
-#     set_symmetric(5, 5, 4*E*Iy/L + 2*L*P0/15)
-#     set_symmetric(12, 12, 4*E*Iy/L + 2*L*P0/15)
+#     # =========================================================================
+#     # GEOMETRIC STIFFNESS MATRIX 
+#     # =========================================================================
+#     # if include_geometric:
+        
+#     # # -----------------------------------------------------------------
+#     # # Axial load P0 effects on bending
+#     # # -----------------------------------------------------------------
     
-#     set_symmetric(5, 7, L*My0/15 + L*P0*y0/15)
-#     set_symmetric(12, 14, L*My0/15 + L*P0*y0/15)
+#     # # v-direction (z-bending)
+#     # set_symmetric(1, 1, 6*P0/(5*L))
+#     # set_symmetric(1, 8, -6*P0/(5*L))
+#     # set_symmetric(8, 8, 6*P0/(5*L))
     
-#     set_symmetric(5, 14, -L*My0/60 - L*P0*y0/60)
-#     set_symmetric(7, 12, -L*My0/60 - L*P0*y0/60)
+#     # set_symmetric(1, 5, P0/10)
+#     # set_symmetric(1, 12, P0/10)
+#     # set_symmetric(5, 8, -P0/10)
+#     # set_symmetric(8, 12, -P0/10)
     
-#     set_symmetric(5, 12, 2*E*Iy/L - L*P0/30)
+#     # set_symmetric(5, 5, 2*L*P0/15)
+#     # set_symmetric(12, 12, 2*L*P0/15)
+#     # set_symmetric(5, 12, -L*P0/30)
     
-#     set_symmetric(6, 6, 4*E*Iz/L + 2*L*P0/15)
-#     set_symmetric(13, 13, 4*E*Iz/L + 2*L*P0/15)
+#     # # w-direction (y-bending)
+#     # set_symmetric(2, 2, 6*P0/(5*L))
+#     # set_symmetric(2, 9, -6*P0/(5*L))
+#     # set_symmetric(9, 9, 6*P0/(5*L))
     
-#     set_symmetric(6, 7, -L*Mz0/15 + L*P0*z0/15)
-#     set_symmetric(13, 14, -L*Mz0/15 + L*P0*z0/15)
+#     # set_symmetric(2, 4, -P0/10)
+#     # set_symmetric(2, 11, -P0/10)
+#     # set_symmetric(4, 9, P0/10)
+#     # set_symmetric(9, 11, P0/10)
     
-#     set_symmetric(6, 13, 2*E*Iz/L - L*P0/30)
+#     # set_symmetric(4, 4, 2*L*P0/15)
+#     # set_symmetric(11, 11, 2*L*P0/15)
+#     # set_symmetric(4, 11, -L*P0/30)
     
-#     set_symmetric(6, 14, L*Mz0/60 - L*P0*z0/60)
-#     set_symmetric(7, 13, L*Mz0/60 - L*P0*z0/60)
+#     # # -----------------------------------------------------------------
+#     # # Axial load P0 effects on torsion (polar radius term)
+#     # # -----------------------------------------------------------------
+#     # set_symmetric(3, 3, 6*P0*r**2/(5*L))
+#     # set_symmetric(3, 10, -6*P0*r**2/(5*L))
+#     # set_symmetric(10, 10, 6*P0*r**2/(5*L))
+    
+#     # set_symmetric(3, 6, P0*r**2/10)
+#     # set_symmetric(3, 13, P0*r**2/10)
+#     # set_symmetric(6, 10, -P0*r**2/10)
+#     # set_symmetric(10, 13, -P0*r**2/10)
+    
+#     # set_symmetric(6, 6, 2*L*P0*r**2/15)
+#     # set_symmetric(13, 13, 2*L*P0*r**2/15)
+#     # set_symmetric(6, 13, -L*P0*r**2/30)
+    
+#     # # -----------------------------------------------------------------
+#     # # Wagner effect (monosymmetry) from moments
+#     # # -----------------------------------------------------------------
+#     # set_symmetric(3, 3, 3*Mz0*beta_z/(5*L) - 3*My0*beta_y/(5*L))
+#     # set_symmetric(3, 10, -3*Mz0*beta_z/(5*L) + 3*My0*beta_y/(5*L))
+#     # set_symmetric(10, 10, 3*Mz0*beta_z/(5*L) - 3*My0*beta_y/(5*L))
+    
+#     # set_symmetric(3, 6, Mz0*beta_z/20 - My0*beta_y/20)
+#     # set_symmetric(3, 13, Mz0*beta_z/20 - My0*beta_y/20)
+#     # set_symmetric(6, 10, -Mz0*beta_z/20 + My0*beta_y/20)
+#     # set_symmetric(10, 13, -Mz0*beta_z/20 + My0*beta_y/20)
+    
+#     # set_symmetric(6, 6, L*Mz0*beta_z/15 - L*My0*beta_y/15)
+#     # set_symmetric(13, 13, L*Mz0*beta_z/15 - L*My0*beta_y/15)
+#     # set_symmetric(6, 13, -L*Mz0*beta_z/60 + L*My0*beta_y/60)
+    
+#     # # -----------------------------------------------------------------
+#     # # Bimoment terms
+#     # # -----------------------------------------------------------------
+#     # set_symmetric(3, 3, -6*B0_bar*W_bar/(5*L))
+#     # set_symmetric(3, 10, 6*B0_bar*W_bar/(5*L))
+#     # set_symmetric(10, 10, -6*B0_bar*W_bar/(5*L))
+    
+#     # set_symmetric(3, 6, -B0_bar*W_bar/10)
+#     # set_symmetric(3, 13, -B0_bar*W_bar/10)
+#     # set_symmetric(6, 10, B0_bar*W_bar/10)
+#     # set_symmetric(10, 13, B0_bar*W_bar/10)
+    
+#     # set_symmetric(6, 6, -2*B0_bar*L*W_bar/15)
+#     # set_symmetric(13, 13, -2*B0_bar*L*W_bar/15)
+#     # set_symmetric(6, 13, B0_bar*L*W_bar/30)
+    
+#     # -----------------------------------------------------------------
+#     # LTB coupling: ∫M·v''·θ dx for Mz0 (v-θx coupling)
+#     # -----------------------------------------------------------------
+#     # v DOFs [1, 5, 8, 12] × θx DOFs [3, 6, 10, 13]
+    
+#     set_symmetric(1, 3, -6*Mz0/(5*L))
+#     set_symmetric(1, 6, -Mz0/10)
+#     set_symmetric(1, 10, 6*Mz0/(5*L))
+#     set_symmetric(1, 13, -Mz0/10)
+    
+#     set_symmetric(5, 3, -11*Mz0/10)
+#     set_symmetric(5, 6, -2*L*Mz0/15)
+#     set_symmetric(5, 10, Mz0/10)
+#     set_symmetric(5, 13, L*Mz0/30)
+    
+#     set_symmetric(8, 3, 6*Mz0/(5*L))
+#     set_symmetric(8, 6, Mz0/10)
+#     set_symmetric(8, 10, -6*Mz0/(5*L))
+#     set_symmetric(8, 13, Mz0/10)
+    
+#     set_symmetric(12, 3, -Mz0/10)
+#     set_symmetric(12, 6, L*Mz0/30)
+#     set_symmetric(12, 10, 11*Mz0/10)
+#     set_symmetric(12, 13, -2*L*Mz0/15)
+    
+#     # # -----------------------------------------------------------------
+#     # # LTB coupling: ∫M·w''·θ dx for My0 (w-θx coupling)
+#     # # -----------------------------------------------------------------
+#     # # w DOFs [2, 4, 9, 11] × θx DOFs [3, 6, 10, 13]
+    
+#     # set_symmetric(2, 3, -6*My0/(5*L))
+#     # set_symmetric(2, 6, -My0/10)
+#     # set_symmetric(2, 10, 6*My0/(5*L))
+#     # set_symmetric(2, 13, -My0/10)
+    
+#     # set_symmetric(4, 3, -11*My0/10)
+#     # set_symmetric(4, 6, -2*L*My0/15)
+#     # set_symmetric(4, 10, My0/10)
+#     # set_symmetric(4, 13, L*My0/30)
+    
+#     # set_symmetric(9, 3, 6*My0/(5*L))
+#     # set_symmetric(9, 6, My0/10)
+#     # set_symmetric(9, 10, -6*My0/(5*L))
+#     # set_symmetric(9, 13, My0/10)
+    
+#     # set_symmetric(11, 3, -My0/10)
+#     # set_symmetric(11, 6, L*My0/30)
+#     # set_symmetric(11, 10, 11*My0/10)
+#     # set_symmetric(11, 13, -2*L*My0/15)
 
 #     return K.tocsr()
 
@@ -1176,45 +1245,59 @@ def thin_wall_stiffness_matrix_chan(E, G, A, Iy, Iz, Iw, J, L,
 
     return K.tocsr()
 
+# def _compute_ltb_coupling(L, My1, My2):
+#     """
+#     Compute the LTB coupling matrix from ∫M·v''·θ dx.
+    
+#     Returns 4x4 matrix coupling:
+#     - v DOFs [v1, θz1, v2, θz2] 
+#     - with θ DOFs [θx1, θx1', θx2, θx2']
+#     """
+#     from numpy.polynomial.legendre import leggauss
+    
+#     xi_g, w_g = leggauss(4)
+#     xi_g = (xi_g + 1) / 2
+#     w_g = w_g / 2
+    
+#     def N_v_2prime(xi):
+#         """Second derivatives of Hermite shape functions for v''"""
+#         return np.array([
+#             (-6 + 12*xi) / L**2,
+#             (-4 + 6*xi) / L,
+#             (6 - 12*xi) / L**2,
+#             (-2 + 6*xi) / L
+#         ])
+    
+#     def N_theta(xi):
+#         """Hermite shape functions for θ"""
+#         return np.array([
+#             1 - 3*xi**2 + 2*xi**3,
+#             L * xi * (1-xi)**2,
+#             3*xi**2 - 2*xi**3,
+#             L * xi**2 * (xi-1)
+#         ])
+    
+#     coupling = np.zeros((4, 4))
+#     for k in range(4):
+#         xi = xi_g[k]
+#         M = My1 * (1 - xi) + My2 * xi
+#         coupling += w_g[k] * M * np.outer(N_v_2prime(xi), N_theta(xi)) * L
+
+#     print(coupling)
+#     return coupling
+
 def _compute_ltb_coupling(L, My1, My2):
-    """
-    Compute the LTB coupling matrix from ∫M·v''·θ dx.
-    
-    Returns 4x4 matrix coupling:
-    - v DOFs [v1, θz1, v2, θz2] 
-    - with θ DOFs [θx1, θx1', θx2, θx2']
-    """
-    from numpy.polynomial.legendre import leggauss
-    
-    xi_g, w_g = leggauss(4)
-    xi_g = (xi_g + 1) / 2
-    w_g = w_g / 2
-    
-    def N_v_2prime(xi):
-        """Second derivatives of Hermite shape functions for v''"""
-        return np.array([
-            (-6 + 12*xi) / L**2,
-            (-4 + 6*xi) / L,
-            (6 - 12*xi) / L**2,
-            (-2 + 6*xi) / L
-        ])
-    
-    def N_theta(xi):
-        """Hermite shape functions for θ"""
-        return np.array([
-            1 - 3*xi**2 + 2*xi**3,
-            L * xi * (1-xi)**2,
-            3*xi**2 - 2*xi**3,
-            L * xi**2 * (xi-1)
-        ])
-    
-    coupling = np.zeros((4, 4))
-    for k in range(4):
-        xi = xi_g[k]
-        M = My1 * (1 - xi) + My2 * xi
-        coupling += w_g[k] * M * np.outer(N_v_2prime(xi), N_theta(xi)) * L
-    
-    return coupling
+    """Analytical LTB coupling matrix."""
+
+    coupling = np.array([
+        [(-11*My1 - My2)/(10*L),  -My1/10,              (My1 + 11*My2)/(10*L),   -My2/10             ],
+        [-9*My1/10 - My2/5,        L*(-3*My1 - My2)/30, -My1/10 + My2/5,          L*My1/30           ],
+        [(11*My1 + My2)/(10*L),    My1/10,             (-My1 - 11*My2)/(10*L),    My2/10             ],
+        [-My1/5 + My2/10,          L*My2/30,            My1/5 + 9*My2/10,         L*(-My1 - 3*My2)/30]
+    ])
+
+    # print(coupling) 
+    return coupling 
 
 def _compute_wagner_coupling(L, My1, My2, beta_x, sign=1.0):
     """

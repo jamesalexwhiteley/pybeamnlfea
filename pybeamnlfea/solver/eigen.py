@@ -30,7 +30,7 @@ class EigenSolver(LinearSolver):
                 threshold=np.inf
             )
                 
-            print(Ktot.todense())
+            # print(Kg.todense())
             # print(np.linalg.matrix_rank(Ktot.todense()))
             # print(np.linalg.det(Ktot.todense()))
 
