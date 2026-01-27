@@ -15,7 +15,7 @@ import numpy as np
 # Author: James Whiteley (github.com/jamesalexwhiteley) 
 
 # Create a beam structure 
-n = 2 
+n = 20 
 L = 10 # m 
 beam = Frame() 
 beam.add_nodes([[i*L/n, 0, 0] for i in range(n+1)]) 

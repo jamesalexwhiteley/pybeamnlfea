@@ -29,10 +29,6 @@ class EigenSolver(LinearSolver):
                 linewidth=200,
                 threshold=np.inf
             )
-                
-            # print(Kg.todense())
-            # print(np.linalg.matrix_rank(Ktot.todense()))
-            # print(np.linalg.det(Ktot.todense()))
 
             # |Km − PKg| = 0 can be rearranged to |A − (1/λ)I| = 0 where A = Km^-1 @ Kg 
             A = spsolve(Km.tocsc(), (Kg + 1e-10 * eye(Kg.shape[0])).tocsc())

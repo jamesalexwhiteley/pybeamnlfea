@@ -95,8 +95,8 @@ interp_table3 = RegularGridInterpolator(
 # BEAM PROPERTIES matching A&T Figures 5 & 6
 # =============================================================================
 # Target A&T parameters
-K_target = 0.0                                              # NOTE 
-delta_target = 0.0                                          # NOTE 
+K_target = 0.247                                         
+delta_target = 0.180                                        
 sqrt_EIy_GJ_over_L2_lb = 8.80  # lb
 lb_to_N = 4.44822
 
@@ -136,17 +136,6 @@ delta_factor = (beta_z_positive_delta / L) * np.sqrt(E * Iy /(G * J))   # should
 # epsilon = (a / L) * sqrt(E * Iy / (G * J))
 # a = epsilon * L / sqrt(E * Iy / (G * J))
 eps_to_a = L / np.sqrt(E * Iy / (G * J))
-
-# print("="*70)
-# print("BEAM PROPERTIES FOR A&T VALIDATION")
-# print("="*70)
-# print(f"E = {E:.3e} Pa, G = {G:.3e} Pa, L = {L:.4f} m")
-# print(f"Iy = {Iy:.6e} m^4, J = {J:.6e} m^4, Iw = {Iw:.6e} m^6")
-# print(f"Scale factor: √(EIyGJ)/L² = {scale_N:.2f} N = {scale_lb:.2f} lb")
-# print(f"K factor: √pi^2(EIwGJ/L²) = {K_factor:.3f}")
-# print(f"Delta factor: (βx/L)√(EIy/GJ) = {delta_factor:.3f}")
-# print(f"Epsilon to height conversion: a = ε × {eps_to_a*1000:.2f} mm")
-# print("="*70)
 
 # =============================================================================
 # PyBeamNLFEA  
@@ -260,12 +249,12 @@ gamma2_neg = np.array([float(interp_table1((K_target, eps, -0.180))) for eps in 
 Pc_curve_pos = gamma2_pos * scale_lb
 Pc_curve_neg = gamma2_neg * scale_lb
 
-ax5.plot(Pc_curve_pos, epsilon_fine, 'b-', linewidth=2, label=r'A&T: $\delta = +0.180$')
-ax5.plot(Pc_curve_neg, epsilon_fine, 'r-', linewidth=2, label=r'A&T: $\delta = -0.180$')
+ax5.plot(Pc_curve_pos, epsilon_fine, 'b-', linewidth=1, label=r'A&T: $\delta = +0.180$')
+ax5.plot(Pc_curve_neg, epsilon_fine, 'r-', linewidth=1, label=r'A&T: $\delta = -0.180$')
 
 # Simulator results
-ax5.plot(results_ss_pos['Pc_lb'], results_ss_pos['eps'], 'b^', markersize=12, markerfacecolor='none', markeredgewidth=2, label=r'FEM: $\delta = +0.180$')
-ax5.plot(results_ss_neg['Pc_lb'], results_ss_neg['eps'], 'rs', markersize=12, markerfacecolor='none', markeredgewidth=2, label=r'FEM: $\delta = -0.180$')
+ax5.plot(results_ss_pos['Pc_lb'], results_ss_pos['eps'], 'bo', markersize=8, markerfacecolor='none', markeredgewidth=1, label=r'FEM: $\delta = +0.180$')
+ax5.plot(results_ss_neg['Pc_lb'], results_ss_neg['eps'], 'ro', markersize=8, markerfacecolor='none', markeredgewidth=1, label=r'FEM: $\delta = -0.180$')
 
 ax5.set_xlabel(r'Critical Load $P_c$ (lb)', fontsize=12)
 ax5.set_ylabel(r'Parameter $\epsilon$ (load height above shear center)', fontsize=12)
@@ -291,12 +280,12 @@ gamma2_cant_neg = np.array([float(interp_table3((K_target, eps, -0.180))) for ep
 Pc_cant_curve_pos = gamma2_cant_pos * scale_lb
 Pc_cant_curve_neg = gamma2_cant_neg * scale_lb
 
-ax6.plot(Pc_cant_curve_pos, epsilon_fine, 'b-', linewidth=2, label=r'A&T: $\delta = +0.180$')
-ax6.plot(Pc_cant_curve_neg, epsilon_fine, 'r-', linewidth=2, label=r'A&T: $\delta = -0.180$')
+ax6.plot(Pc_cant_curve_pos, epsilon_fine, 'b-', linewidth=1, label=r'A&T: $\delta = +0.180$')
+ax6.plot(Pc_cant_curve_neg, epsilon_fine, 'r-', linewidth=1, label=r'A&T: $\delta = -0.180$')
 
 # Simulator results
-ax6.plot(results_cant_pos['Pc_lb'], results_cant_pos['eps'], 'b^', markersize=12, markerfacecolor='none', markeredgewidth=2, label=r'FEM: $\delta = +0.180$')
-ax6.plot(results_cant_neg['Pc_lb'], results_cant_neg['eps'], 'rs', markersize=12, markerfacecolor='none', markeredgewidth=2, label=r'FEM: $\delta = -0.180$')
+ax6.plot(results_cant_pos['Pc_lb'], results_cant_pos['eps'], 'bo', markersize=8, markerfacecolor='none', markeredgewidth=1, label=r'FEM: $\delta = +0.180$')
+ax6.plot(results_cant_neg['Pc_lb'], results_cant_neg['eps'], 'ro', markersize=8, markerfacecolor='none', markeredgewidth=1, label=r'FEM: $\delta = -0.180$')
 
 ax6.set_xlabel(r'Critical Load $P_c$ (lb)', fontsize=12)
 ax6.set_ylabel(r'Parameter $\epsilon$ (load height above shear center)', fontsize=12)

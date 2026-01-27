@@ -2,7 +2,7 @@ import numpy as np
 from pybeamnlfea.model.node import Node 
 from pybeamnlfea.model.material import Material 
 from pybeamnlfea.model.section import Section 
-from pybeamnlfea.utils.stiffness_matrix import thin_wall_stiffness_matrix_bazant, thin_wall_stiffness_matrix_chan
+from pybeamnlfea.utils.stiffness_matrix import thin_wall_stiffness_matrix_bazant, thin_wall_stiffness_matrix_chan, thin_wall_stiffness_matrix_derived
 
 # Author: James Whiteley (github.com/jamesalexwhiteley)
 
@@ -216,8 +216,24 @@ class ThinWalledBeamElement(Element):
             
             Mw = internal_forces.get('bimoment', internal_forces.get('Mw', 0))
         
-        # Combined stiffness matrix
-        k = thin_wall_stiffness_matrix_chan(
+        # # Combined stiffness matrix
+        # k = thin_wall_stiffness_matrix_chan(
+        #     E, G, A, Iy, Iz, Iw, J, L,
+        #     P=P, My1=My1, My2=My2, Mz1=Mz1, Mz2=-Mz2, Mw=Mw,
+        #     y0=geom['y0'], z0=geom['z0'],
+        #     beta_y=geom['beta_y'], beta_z=geom['beta_z'], beta_w=geom['beta_w'],
+        #     r1=geom['r1'],
+        #     include_geometric=include_geometric
+        # )
+
+        # k = thin_wall_stiffness_matrix_bazant(
+        #         E, G, A, Iy, Iz, Iw, J, L, 
+        #         # P0=P, My0=(My1+My2)/2, Mz0=(Mz1+Mz2)/2, B0_bar=Mw,
+        #         P0=P, Mz0=(My1+My2), My0=(Mz1+Mz2), B0_bar=Mw,
+        #         W_bar=0, y0=geom['y0'], z0=geom['z0'], beta_y=geom['beta_y'], beta_z=geom['beta_z'], r=geom['r1']
+        # )  
+
+        k = thin_wall_stiffness_matrix_derived(
             E, G, A, Iy, Iz, Iw, J, L,
             P=P, My1=My1, My2=My2, Mz1=Mz1, Mz2=-Mz2, Mw=Mw,
             y0=geom['y0'], z0=geom['z0'],
@@ -225,13 +241,6 @@ class ThinWalledBeamElement(Element):
             r1=geom['r1'],
             include_geometric=include_geometric
         )
-
-        k = thin_wall_stiffness_matrix_bazant(
-                E, G, A, Iy, Iz, Iw, J, L, 
-                # P0=P, My0=(My1+My2)/2, Mz0=(Mz1+Mz2)/2, B0_bar=Mw,
-                P0=P, Mz0=(My1+My2), My0=(Mz1+Mz2), B0_bar=Mw,
-                W_bar=0, y0=geom['y0'], z0=geom['z0'], beta_y=geom['beta_y'], beta_z=geom['beta_z'], r=geom['r1']
-        )  
         
         return k
 
