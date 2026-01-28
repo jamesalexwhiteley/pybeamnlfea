@@ -132,54 +132,6 @@ class ThinWalledBeamElement(Element):
         
         return k_elastic
 
-    # def compute_geometric_stiffness_matrix(self, internal_forces):
-    #     """
-    #     Compute only the geometric stiffness matrix component.
-        
-    #     Args:
-    #         internal_forces : dict
-    #             Dictionary containing:
-    #             - 'axial' or 'P': Axial force
-    #             - 'moment_y1', 'moment_y2' or 'My1', 'My2': Moments about y at nodes 1, 2
-    #             - 'moment_z1', 'moment_z2' or 'Mz1', 'Mz2': Moments about z at nodes 1, 2
-    #             - 'shear_y' or 'Vy': Shear force in y direction
-    #             - 'shear_z' or 'Vz': Shear force in z direction
-    #             - 'bimoment' or 'Mw': Wagner moment / bimoment
-                
-    #     Returns:
-    #         scipy.sparse.csr_matrix: 14x14 geometric stiffness matrix
-    #     """
-    #     L = self.L
-    #     geom = self._get_section_geometry()
-        
-    #     # Extract forces with multiple possible key names
-    #     P = internal_forces.get('axial', internal_forces.get('P', 0))
-        
-    #     My1 = internal_forces.get('moment_y1', internal_forces.get('My1', 0))
-    #     My2 = internal_forces.get('moment_y2', internal_forces.get('My2', 0))
-    #     Mz1 = internal_forces.get('moment_z1', internal_forces.get('Mz1', 0))
-    #     Mz2 = internal_forces.get('moment_z2', internal_forces.get('Mz2', 0))
-        
-    #     # Vy = internal_forces.get('shear_y', internal_forces.get('Vy', 0))
-    #     # Vz = internal_forces.get('shear_z', internal_forces.get('Vz', 0))
-        
-    #     Mw = internal_forces.get('bimoment', internal_forces.get('Mw', 0))
-        
-    #     # Geometric stiffness matrix only (dummy elastic params)
-    #     k_geom = thin_wall_stiffness_matrix(
-    #         E=1, G=1, A=1, Iy=1, Iz=1, Iw=1, J=1, L=L,
-    #         P=P, My1=My1, My2=My2, Mz1=Mz1, Mz2=Mz2,
-    #         Mw=Mw, 
-    #         y0=geom['y0'], z0=geom['z0'],
-    #         beta_y=geom['beta_y'], beta_z=geom['beta_z'], beta_w=geom['beta_w'],
-    #         r1=geom['r1'],
-    #         # Vy=Vy, Vz=Vz,
-    #         include_elastic=False,
-    #         include_geometric=True
-    #     )
-        
-    #     return k_geom
-
     def compute_local_stiffness_matrix(self, include_geometric=False, internal_forces=None):
         """
         Compute local stiffness matrix with optional geometric effects.

@@ -56,6 +56,43 @@ interp_table1 = RegularGridInterpolator(
 )
 
 # =============================================================================
+# A&T Table 2: Simply supported with uniform load
+# =============================================================================
+table2_data = np.array([
+    [[ 8.81, 10.71, 12.20, 13.08, 13.86, 15.70, 18.75],
+     [11.07, 14.51, 17.22, 18.68, 20.19, 23.35, 28.30],
+     [13.87, 20.41, 25.70, 28.32, 30.90, 35.90, 42.96],
+     [17.96, 27.77, 38.29, 42.67, 46.54, 53.37, 62.07],
+     [18.61, 32.33, 53.32, 60.24, 65.53, 73.97, 83.90]],
+    [[ 8.95, 10.83, 12.31, 13.12, 13.98, 15.84, 19.03],
+     [11.36, 14.69, 17.36, 18.81, 20.32, 23.53, 28.70],
+     [14.30, 20.79, 25.89, 28.47, 31.04, 36.12, 43.57],
+     [21.35, 28.54, 38.61, 42.85, 46.68, 53.59, 62.85],
+     [23.21, 34.24, 53.99, 60.49, 65.67, 74.17, 84.78]],
+    [[ 9.83, 11.65, 13.14, 13.97, 14.86, 16.85, 20.35],
+     [12.73, 15.83, 18.40, 19.84, 21.38, 24.74, 30.39],
+     [17.09, 22.64, 27.18, 29.63, 32.16, 37.37, 45.39],
+     [22.86, 32.78, 40.36, 44.09, 47.71, 54.67, 64.53],
+     [28.43, 44.86, 56.84, 61.98, 66.65, 75.03, 86.20]],
+    [[17.03, 19.50, 21.47, 22.56, 23.73, 26.32, 30.88],
+     [21.53, 25.21, 28.15, 29.77, 31.51, 35.30, 41.76],
+     [28.11, 33.60, 37.89, 40.22, 42.67, 47.89, 56.35],
+     [37.54, 45.34, 51.20, 54.29, 57.47, 64.02, 74.15],
+     [50.09, 60.39, 67.74, 71.49, 75.28, 82.89, 94.26]],
+    [[59.14, 63.69, 66.97, 68.68, 70.45, 74.14, 80.07],
+     [67.22, 72.62, 76.49, 78.52, 80.59, 84.91, 91.79],
+     [76.75, 83.10, 87.62, 89.97, 92.37, 97.34,105.19],
+     [87.86, 95.21,100.41,103.08,105.82,111.43,120.21],
+     [100.59,108.96,114.81,117.81,120.86,127.08,136.72]]
+])
+
+
+interp_table2 = RegularGridInterpolator(
+    (K_values, epsilon_values, delta_values),
+    table2_data, method='cubic', bounds_error=False, fill_value=None
+)
+
+# =============================================================================
 # A&T Table 3: Cantilevers with end load
 # =============================================================================
 table3_data = np.array([
@@ -89,6 +126,42 @@ table3_data = np.array([
 interp_table3 = RegularGridInterpolator(
     (K_values, epsilon_values, delta_values),
     table3_data, method='cubic', bounds_error=False, fill_value=None
+)
+
+# =============================================================================
+# A&T Table 4: Cantilevers with uniform load 
+# =============================================================================
+table4_data = np.array([
+    [[ 7.64,  5.32,  4.27,  3.85,  3.49,  2.89,  2.25],
+     [19.76, 11.24,  7.83,  6.60,  5.62,  4.18,  2.84],
+     [41.67, 25.54, 16.54, 12.89,  9.95,  7.49,  3.26],
+     [54.17, 35.60, 23.74, 18.27, 13.35,  8.66,  3.37],
+     [62.72, 42.18, 28.36, 21.60, 15.12,  9.38,  3.41]],
+    [[ 8.02,  5.63,  4.56,  4.13,  3.77,  3.17,  2.52],
+     [20.60, 11.89,  8.39,  7.14,  6.14,  4.68,  3.35],
+     [42.34, 26.77, 17.90, 14.29, 11.36,  7.44,  4.56],
+     [54.57, 36.88, 25.63, 20.51, 16.07,  9.32,  5.65],
+     [62.89, 43.42, 30.49, 24.35, 18.89, 11.37,  6.32]],
+    [[ 8.89,  6.39,  5.27,  4.83,  4.44,  3.80,  3.10],
+     [22.51, 13.40,  9.73,  8.41,  7.35,  5.78,  4.29],
+     [46.21, 30.31, 21.26, 17.53, 14.42,  9.99,  6.40],
+     [59.40, 41.76, 30.78, 25.83, 21.46, 14.73,  8.95],
+     [68.19, 49.02, 36.62, 30.87, 25.67, 17.57, 10.63]],
+    [[13.03, 10.08,  8.69,  8.11,  7.60,  6.74,  5.75],
+     [29.98, 20.04, 15.76, 14.13, 12.76, 10.61,  8.39],
+     [59.47, 43.60, 34.20, 30.04, 26.31, 20.25, 14.22],
+     [76.30, 60.13, 50.24, 45.65, 41.32, 33.55, 24.18],
+     [87.01, 69.92, 59.34, 54.40, 49.74, 41.33, 31.14]],
+    [[33.29, 27.60, 24.66, 23.38, 22.24, 20.19, 17.71],
+     [59.11, 46.55, 40.01, 37.22, 34.71, 30.43, 25.46],
+     [97.15, 80.16, 69.55, 64.57, 59.85, 51.34, 40.97],
+     [125.30,109.80, 99.64, 94.66, 89.74, 80.01, 66.38],
+     [143.20,128.30,118.70,114.10,109.50,100.60, 87.84]]
+])
+
+interp_table4 = RegularGridInterpolator(
+    (K_values, epsilon_values, delta_values),
+    table4_data, method='cubic', bounds_error=False, fill_value=None
 )
 
 # =============================================================================
@@ -153,21 +226,12 @@ def run_simply_supported_beam(E, G, rho, L, A, Ix, Iy, J, Iw, y0, beta_z, load_h
     # Simply supported, free to warp; (ux, uy, uz, θx, θy, θz, φ) with 0=fixed, 1=free
     beam.add_boundary_condition(0, [0, 0, 0, 0, 1, 1, 1], BoundaryCondition)
     beam.add_boundary_condition(n, [0, 0, 0, 0, 1, 1, 1], BoundaryCondition)
-    beam.add_nodal_load(n//2, [0, 0, -1, 0, 0, 0, 0], NodalLoad)  # central point load
-    
-    # NOTE element doesn't handle load height internally; add torque:
-    torque = load_height_above_shear_center * 1  # for unit load
-    beam.add_nodal_load(n//2, [0, 0, 0, torque, 0, 0, 0], NodalLoad)
+    beam.add_nodal_load(n//2, [0, 0, -1, 0, 0, 0, 0], NodalLoad, load_height=load_height_above_shear_center)  # central point load
+    # [beam.add_uniform_load(element_id=e, forces=[0, 0, -1], load_height=load_height_above_shear_center) for e in range(n)] 
+
     eigenvalues, eigenvectors = beam.solve_eigen(num_modes=1)
     # beam.show_mode_shape(eigenvectors[0], scale=2, cross_section_scale=1)
-
     P_c = eigenvalues[0]
-    
-    # # A&T theoretical value 
-    # epsilon = load_height_above_shear_center / eps_to_a
-    # delta = beta_z / L * np.sqrt(E * Iy / (G * J))
-    # gamma_2 = float(interp_table1((K_target, epsilon, delta)))
-    # P_c = gamma_2 * scale_N
     
     return P_c
 
@@ -183,22 +247,17 @@ def run_cantilever(E, G, rho, L, A, Ix, Iy, J, Iw, y0, beta_z, load_height_above
     
     # Cantilever; (ux, uy, uz, θx, θy, θz, φ) with 0=fixed, 1=free
     beam.add_boundary_condition(0, [0, 0, 0, 0, 0, 0, 0], BoundaryCondition)
-    beam.add_nodal_load(n, [0, 0, -1, 0, 0, 0, 0], NodalLoad)  # end load 
-    
+    beam.add_nodal_load(n, [0, 0, -1, 0, 0, 0, 0], NodalLoad, load_height=load_height_above_shear_center)  # end load 
+    # [beam.add_uniform_load(element_id=e, forces=[0, 0, -1], load_height=load_height_above_shear_center) for e in range(n)] 
+
     eigenvalues, eigenvectors = beam.solve_eigen(num_modes=1)
+    # beam.show_mode_shape(eigenvectors[0], scale=2, cross_section_scale=1)
     P_c = eigenvalues[0]
-    
-    # # PLACEHOLDER: Return A&T theoretical value
-    # epsilon = load_height_above_shear_center / eps_to_a
-    # delta = beta_z / L * np.sqrt(E * Iy / (G * J))
-    # gamma_2 = float(interp_table3((K_target, epsilon, delta)))
-    # P_c = gamma_2 * scale_N
     
     return P_c
 
 # Epsilon values to test
 test_epsilons = np.array([0.3, 0.15, 0, -0.15, -0.3])
-# test_epsilons = np.array([0])  # NOTE load applied at centroid 
 results_ss_pos = {'eps': [], 'Pc_N': [], 'Pc_lb': []}  # δ = +0.180
 results_ss_neg = {'eps': [], 'Pc_N': [], 'Pc_lb': []}  # δ = -0.180
 
@@ -246,6 +305,8 @@ fig5, ax5 = plt.subplots(figsize=(10, 8))
 epsilon_fine = np.linspace(0.5, -0.5, 100)
 gamma2_pos = np.array([float(interp_table1((K_target, eps, 0.180))) for eps in epsilon_fine])
 gamma2_neg = np.array([float(interp_table1((K_target, eps, -0.180))) for eps in epsilon_fine])
+# gamma2_pos = np.array([float(interp_table2((K_target, eps, 0.180))) for eps in epsilon_fine])
+# gamma2_neg = np.array([float(interp_table2((K_target, eps, -0.180))) for eps in epsilon_fine])
 Pc_curve_pos = gamma2_pos * scale_lb
 Pc_curve_neg = gamma2_neg * scale_lb
 
@@ -277,6 +338,8 @@ fig6, ax6 = plt.subplots(figsize=(10, 8))
 # A&T theoretical curves
 gamma2_cant_pos = np.array([float(interp_table3((K_target, eps, 0.180))) for eps in epsilon_fine])
 gamma2_cant_neg = np.array([float(interp_table3((K_target, eps, -0.180))) for eps in epsilon_fine])
+# gamma2_cant_pos = np.array([float(interp_table4((K_target, eps, 0.180))) for eps in epsilon_fine])
+# gamma2_cant_neg = np.array([float(interp_table4((K_target, eps, -0.180))) for eps in epsilon_fine])
 Pc_cant_curve_pos = gamma2_cant_pos * scale_lb
 Pc_cant_curve_neg = gamma2_cant_neg * scale_lb
 
@@ -295,6 +358,8 @@ ax6.grid(True, alpha=0.3)
 ax6.axhline(y=0, color='k', linestyle='-', linewidth=0.5)
 ax6.set_xlim(0, 80)
 ax6.set_ylim(-0.4, 0.4)
+# ax6.set_xlim(0, 400)
+# ax6.set_ylim(-0.4, 0.4)
 
 plt.tight_layout()
 plt.show()

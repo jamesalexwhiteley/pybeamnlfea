@@ -23,12 +23,26 @@ class EigenSolver(LinearSolver):
             Km = assembler.assemble_stiffness_matrix(geometric_stiffness=False)
             Kg = Ktot - Km
 
-            np.set_printoptions(
-                precision=6,
-                suppress=True,
-                linewidth=200,
-                threshold=np.inf
-            )
+            # np.set_printoptions(
+            #     precision=6,
+            #     suppress=True,
+            #     linewidth=200,
+            #     threshold=np.inf
+            # )
+            
+            # add Pa term (load height effect)
+            for load in assembler.frame.loads.values():
+                if not hasattr(load, "load_height"):
+                    continue
+                if abs(load.load_height) < 1e-12:
+                    continue
+
+                P = -load.force_vector[2]  # transverse force Fz
+                a = load.load_height
+                node_id = load.node_id
+
+                theta_x_dof = assembler.dof_map[(node_id, 3)]  # theta_x dof 
+                Kg[theta_x_dof, theta_x_dof] += P * a
 
             # |Km − PKg| = 0 can be rearranged to |A − (1/λ)I| = 0 where A = Km^-1 @ Kg 
             A = spsolve(Km.tocsc(), (Kg + 1e-10 * eye(Kg.shape[0])).tocsc())

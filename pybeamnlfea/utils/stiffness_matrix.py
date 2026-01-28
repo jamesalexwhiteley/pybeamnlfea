@@ -983,37 +983,37 @@ def thin_wall_stiffness_matrix_derived(E, G, A, Iy, Iz, Iw, J, L,
 
 if __name__ == "__main__":
 
-    # # Stiffness matrix 
-    keb = thin_wall_stiffness_matrix_bazant(E=1, G=1, A=1, Iy=1, Iz=1, Iw=1, J=1, L=1, 
-                                            P0=0, My0=0, Mz0=0, B0_bar=0, 
-                                            W_bar=0, y0=0, z0=0, beta_y=0, beta_z=0, r=0)
-    ktb = thin_wall_stiffness_matrix_bazant(E=1, G=1, A=1, Iy=1, Iz=1, Iw=1, J=1, L=1, 
-                                            P0=0, My0=0, Mz0=-2, B0_bar=0, 
-                                            W_bar=0, y0=0, z0=0, beta_y=0, beta_z=0, r=0)
-    kgb = ktb - keb
+    # # # Stiffness matrix 
+    # keb = thin_wall_stiffness_matrix_bazant(E=1, G=1, A=1, Iy=1, Iz=1, Iw=1, J=1, L=1, 
+    #                                         P0=0, My0=0, Mz0=0, B0_bar=0, 
+    #                                         W_bar=0, y0=0, z0=0, beta_y=0, beta_z=0, r=0)
+    # ktb = thin_wall_stiffness_matrix_bazant(E=1, G=1, A=1, Iy=1, Iz=1, Iw=1, J=1, L=1, 
+    #                                         P0=0, My0=0, Mz0=-2, B0_bar=0, 
+    #                                         W_bar=0, y0=0, z0=0, beta_y=0, beta_z=0, r=0)
+    # kgb = ktb - keb
 
-    # Stiffness matrix
-    kec = thin_wall_stiffness_matrix_chan(E=1, G=1, A=1, Iy=1, Iz=1, Iw=1, J=1, L=1, 
-                                        P=0, My1=0, My2=0, Mz1=0, Mz2=0, Mw=0, 
-                                        y0=0, z0=0, beta_y=0, beta_z=0, beta_w=0, r1=0,
-                                        include_geometric=False)
+    # # Stiffness matrix
+    # kec = thin_wall_stiffness_matrix_chan(E=1, G=1, A=1, Iy=1, Iz=1, Iw=1, J=1, L=1, 
+    #                                     P=0, My1=0, My2=0, Mz1=0, Mz2=0, Mw=0, 
+    #                                     y0=0, z0=0, beta_y=0, beta_z=0, beta_w=0, r1=0,
+    #                                     include_geometric=False)
     
-    ktc = thin_wall_stiffness_matrix_chan(E=1, G=1, A=1, Iy=1, Iz=1, Iw=1, J=1, L=1,  
-                                        P=0, My1=-1, My2=-1, Mz1=0, Mz2=0, Mw=0, 
-                                        y0=0, z0=0, beta_y=0, beta_z=0, beta_w=0, r1=0,
-                                        include_geometric=True)
-    kgc = ktc - kec
+    # ktc = thin_wall_stiffness_matrix_chan(E=1, G=1, A=1, Iy=1, Iz=1, Iw=1, J=1, L=1,  
+    #                                     P=0, My1=-1, My2=-1, Mz1=0, Mz2=0, Mw=0, 
+    #                                     y0=0, z0=0, beta_y=0, beta_z=0, beta_w=0, r1=0,
+    #                                     include_geometric=True)
+    # kgc = ktc - kec
 
-    np.set_printoptions(
-        precision=6,
-        suppress=True,
-        linewidth=200,
-        threshold=np.inf
-    )
+    # np.set_printoptions(
+    #     precision=6,
+    #     suppress=True,
+    #     linewidth=200,
+    #     threshold=np.inf
+    # )
 
-    print((kgb).todense())
-    print((kgc).todense())
-    print((kgb - kgc).todense())
+    # print((kgb).todense())
+    # print((kgc).todense())
+    # print((kgb - kgc).todense())
     
     # Save to file
     import os

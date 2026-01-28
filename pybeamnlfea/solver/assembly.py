@@ -1,5 +1,5 @@
 import numpy as np 
-from pybeamnlfea.model.load import NodalLoad 
+from pybeamnlfea.model.load import NodalLoad
 from scipy.sparse import coo_matrix, csr_matrix
 
 # Author: James Whiteley (github.com/jamesalexwhiteley)
@@ -129,6 +129,22 @@ class Assembler:
                     rows.append(global_dof)
                     cols.append(global_dof)
                     data.append(support_stiffness)
+
+        # # Add contributions from load height effect 
+        # for load in self.frame.loads.values():
+        #     # print(load.load_height)
+        #     if hasattr(load, 'load_height') and abs(load.load_height) > 1e-12:
+        #         node_id = load.node_id
+        #         a = load.load_height
+        #         P = 1       # temp 
+
+        #         for i in range(node.ndof):
+        #             global_dof = self.dof_map.get((node_id, i), -1)
+
+        #             load_height_term = P * a 
+        #             rows.append(global_dof)
+        #             cols.append(global_dof)
+        #             data.append(load_height_term)
         
         K = coo_matrix((data, (rows, cols)), shape=(total_dofs, total_dofs))
         return K.tocsr()
