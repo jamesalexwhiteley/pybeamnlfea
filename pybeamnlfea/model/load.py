@@ -10,7 +10,7 @@ class Load:
 
 class NodalLoad(Load):
     """Represents a force/moment load applied directly to a node"""
-    def __init__(self, node_id: int, force_vector: np.ndarray, load_height: float=0):
+    def __init__(self, node_id: int, force_vector: np.ndarray, load_height: float=0, **kwargs):
         """
         Initialise a nodal load.    
         
@@ -23,26 +23,14 @@ class NodalLoad(Load):
             raise ValueError("Force vector must have 7 values")
         self.force_vector = np.array(force_vector, dtype=float)
         self.load_height = load_height
+
+        # Store additional properties
+        for key, value in kwargs.items():
+            setattr(self, key, value)
     
     def __repr__(self) -> str:
         """String representation of the load."""
         return f"NodalLoad({self.node_id}, forces={self.force_vector})"
-    
-# class NodalLoadWithHeight(NodalLoad):
-#     """Represents a force/moment load applied directly to a node"""
-#     def __init__(self, node_id: int, force_vector: np.ndarray, load_height: float):
-#         """
-#         Initialise a nodal load.    
-        
-#         Args:
-#             node_id: node tag 
-#             force_vector: array of 7 values [Fx, Fy, Fz, Mx, My, Mz, Bx] 
-#         """
-#         super().__init__(node_id)
-#         if len(force_vector) != 7:
-#             raise ValueError("Force vector must have 7 values")
-#         self.force_vector = np.array(force_vector, dtype=float)
-#         self.load_height = load_height
 
 class UniformLoad(Load):
     """Represents a uniformly distributed load applied to an element"""

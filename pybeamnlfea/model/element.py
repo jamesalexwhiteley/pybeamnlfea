@@ -156,6 +156,7 @@ class ThinWalledBeamElement(Element):
         My1 = My2 = 0
         Mz1 = Mz2 = 0
         Mw = 0
+        load_height = q = 0
         
         if include_geometric and internal_forces is not None:
             # Extract forces
@@ -167,6 +168,10 @@ class ThinWalledBeamElement(Element):
             Mz2 = internal_forces.get('moment_z2', internal_forces.get('Mz2', 0))
             
             Mw = internal_forces.get('bimoment', internal_forces.get('Mw', 0))
+
+            # Get UDL load height effect if present
+            load_height = getattr(self, 'load_height', 0)
+            q = getattr(self, 'q_transverse', 0)
         
         # # Combined stiffness matrix
         # k = thin_wall_stiffness_matrix_chan(
@@ -191,6 +196,7 @@ class ThinWalledBeamElement(Element):
             y0=geom['y0'], z0=geom['z0'],
             beta_y=geom['beta_y'], beta_z=geom['beta_z'], beta_w=geom['beta_w'],
             r1=geom['r1'],
+            load_height=load_height, q=q,
             include_geometric=include_geometric
         )
         

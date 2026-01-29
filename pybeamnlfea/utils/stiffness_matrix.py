@@ -790,9 +790,9 @@ def _compute_load_height_coupling(L, q1, q2, a):
     return load_height
 
 def thin_wall_stiffness_matrix_derived(E, G, A, Iy, Iz, Iw, J, L,
-                                     P=0, My1=0, My2=0, Mz1=0, Mz2=0,
-                                     Mw=0, y0=0, z0=0, beta_y=0, beta_z=0, beta_w=0, r1=0,
-                                     beta_x=0,
+                                     P=0, My1=0, My2=0, Mz1=0, Mz2=0, Mw=0, 
+                                     y0=0, z0=0, beta_y=0, beta_z=0, beta_w=0, r1=0,
+                                     load_height=0, q=0,  # NOTE: load height effect
                                      include_geometric=True,
                                      n_gauss=4):
     """Thin-walled beam element stiffness matrix (14x14)."""
@@ -862,10 +862,7 @@ def thin_wall_stiffness_matrix_derived(E, G, A, Iy, Iz, Iw, J, L,
         r0_sq = r1
     else:
         r0_sq = (Iy + Iz) / A + y0**2 + z0**2
-    
-    # Wagner parameter (use beta_z as the monosymmetry parameter)
-    beta_mono = beta_z if beta_x == 0 else beta_x
-    
+
     # Gauss quadrature on [0, 1]
     xi_g, w_g = leggauss(n_gauss)
     xi_g = (xi_g + 1) / 2
@@ -900,6 +897,7 @@ def thin_wall_stiffness_matrix_derived(E, G, A, Iy, Iz, Iw, J, L,
     K_My_Ndp_N = np.zeros((4, 4))
     K_Mz_Ndp_N = np.zeros((4, 4))
     K_My_Np_Np = np.zeros((4, 4))
+    K_N_N = np.zeros((4, 4))
     
     for k in range(n_gauss):
         xi = xi_g[k]
@@ -916,6 +914,7 @@ def thin_wall_stiffness_matrix_derived(E, G, A, Iy, Iz, Iw, J, L,
         K_My_Ndp_N += wt * My * np.outer(Ndp, N) * L
         K_Mz_Ndp_N += wt * Mz * np.outer(Ndp, N) * L
         K_My_Np_Np += wt * My * np.outer(Np, Np) * L
+        K_N_N += wt * np.outer(N, N) * L
     
     w_sign = np.array([1, -1, 1, -1])
     
@@ -973,11 +972,18 @@ def thin_wall_stiffness_matrix_derived(E, G, A, Iy, Iz, Iw, J, L,
             K[w_dofs[i], t_dofs[j]] += val
             K[t_dofs[j], w_dofs[i]] += val
     
-    # 8. Wagner effect with calibrated factor
-    K_Wagner = beta_mono * K_My_Np_Np
+    # 8. Wagner effect with calibrated factor NOTE: use beta_z as the monosymmetry parameter
+    K_Wagner = beta_z * K_My_Np_Np
     for i in range(4):
         for j in range(4):
-            K[t_dofs[i], t_dofs[j]] += K_Wagner[i, j]
+            K[t_dofs[i], t_dofs[j]] += K_Wagner[i, j] 
+
+    # 9. Load height effect for UDL: q·a·∫θ² dx
+    if abs(load_height) > 1e-12 and abs(q) > 1e-12:
+        K_load_height = q * load_height * K_N_N
+        for i in range(4):
+            for j in range(4):
+                K[t_dofs[i], t_dofs[j]] += K_load_height[i, j]
     
     return K.tocsr()
 
@@ -1015,23 +1021,24 @@ if __name__ == "__main__":
     # print((kgc).todense())
     # print((kgb - kgc).todense())
     
-    # Save to file
-    import os
+    # # Save to file
+    # import os
     
-    def dict_to_string(sparse_dict):
-        """Convert sparse dictionary to formatted string"""
-        lines = []
-        for (i, j), value in sparse_dict.items():
-            if abs(value) > 1e-10: # filter out near-zero values
-                lines.append(f"K[{i+1}, {j+1}] = {value:.6e}")
-        return "\n".join(lines)
+    # def dict_to_string(sparse_dict):
+    #     """Convert sparse dictionary to formatted string"""
+    #     lines = []
+    #     for (i, j), value in sparse_dict.items():
+    #         if abs(value) > 1e-10: # filter out near-zero values
+    #             lines.append(f"K[{i+1}, {j+1}] = {value:.6e}")
+    #     return "\n".join(lines)
     
-    # Create output directory
-    output_dir = "output_files"
-    os.makedirs(output_dir, exist_ok=True)
+    # # Create output directory
+    # output_dir = "output_files"
+    # os.makedirs(output_dir, exist_ok=True)
     
-    # Write to file
-    file_path = os.path.join(output_dir, "stiffness_matrix.txt")
-    with open(file_path, 'w') as f:
-        f.write(dict_to_string(K.todok()))
+    # # Write to file
+    # file_path = os.path.join(output_dir, "stiffness_matrix.txt")
+    # with open(file_path, 'w') as f:
+    #     f.write(dict_to_string(K.todok()))
+    pass 
     

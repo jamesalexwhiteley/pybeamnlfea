@@ -171,6 +171,11 @@ class Frame:
         if element_id not in self.elements:
             raise ValueError(f"Element {element_id} not found in the frame")
         
+        # Store load height effect directly on element
+        element = self.elements[element_id]
+        element.load_height = load_height
+        element.q_transverse = -forces[2]  # transverse component
+        
         # Store the uniform load object
         if not hasattr(self, 'uniform_loads'):
             self.uniform_loads = {}
@@ -226,12 +231,12 @@ class Frame:
         if node_i_id in self.loads:
             self.loads[node_i_id].force_vector += global_force_i
         else:
-            self.loads[node_i_id] = NodalLoad(node_i_id, global_force_i, load_height)
+            self.loads[node_i_id] = NodalLoad(node_i_id, global_force_i)
         
         if node_j_id in self.loads:
             self.loads[node_j_id].force_vector += global_force_j
         else:
-            self.loads[node_j_id] = NodalLoad(node_j_id, global_force_j, load_height)
+            self.loads[node_j_id] = NodalLoad(node_j_id, global_force_j)
 
     # def add_uniform_moment(self, element_id: int, forces: List[float], load_class=UniformLoad) -> None:
     #     """

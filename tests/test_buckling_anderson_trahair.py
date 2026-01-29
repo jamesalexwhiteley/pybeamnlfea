@@ -199,6 +199,7 @@ D = 0.0756  # m (75.6 mm)
 
 # Scale factor for converting gamma_2 to P_c
 scale_N = np.sqrt(E * Iy * G * J) / L**2   # should be ≈ 39.14 N
+# scale_N = np.sqrt(E * Iy * G * J) / L**3   # should be ≈ 39.14 N
 scale_lb = scale_N / lb_to_N               # should be ≈ 8.80 lb
 
 # K and detla factors

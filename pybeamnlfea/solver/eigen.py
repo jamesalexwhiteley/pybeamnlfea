@@ -29,19 +29,22 @@ class EigenSolver(LinearSolver):
             #     linewidth=200,
             #     threshold=np.inf
             # )
-            
+
             # add Pa term (load height effect)
             for load in assembler.frame.loads.values():
-                if not hasattr(load, "load_height"):
+                if not hasattr(load, "load_height") or abs(load.load_height) < 1e-12:
                     continue
-                if abs(load.load_height) < 1e-12:
-                    continue
-
-                P = -load.force_vector[2]  # transverse force Fz
+                
                 a = load.load_height
-                node_id = load.node_id
-
-                theta_x_dof = assembler.dof_map[(node_id, 3)]  # theta_x dof 
+                
+                if hasattr(load, "tributary_load"):
+                    # From uniform load
+                    P = load.tributary_load
+                else:
+                    # Point load
+                    P = -load.force_vector[2]
+                
+                theta_x_dof = assembler.dof_map[(load.node_id, 3)]
                 Kg[theta_x_dof, theta_x_dof] += P * a
 
             # |Km − PKg| = 0 can be rearranged to |A − (1/λ)I| = 0 where A = Km^-1 @ Kg 
