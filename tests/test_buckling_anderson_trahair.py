@@ -176,17 +176,17 @@ lb_to_N = 4.44822
 # Material: Aluminum
 E = 7.000e+10   # Pa
 G = 2.600e+10   # Pa
-rho = 2700      # kg/m³
+rho = 2700      # kg/m3
 
 # Beam length
 L = 1.678852    # m
 
 # Section properties (adjusted to exactly match A&T parameters)
-Iy = 9.209763e-09   # m^4 (minor axis - for lateral buckling)
-Ix = 5.0e-08        # m^4 (major axis - approximate, for bending under load)
-J = 7.262188e-10    # m^4 (torsion constant)
-Iw = 4.699609e-12   # m^6 (warping constant)
-A = 5.0e-04         # m^2 (approximate cross-sectional area)
+Iy = 9.209763e-09   # m4 (minor axis - for lateral buckling)
+Ix = 5.0e-08        # m4 (major axis - approximate, for bending under load)
+J = 7.262188e-10    # m4 (torsion constant)
+Iw = 4.699609e-12   # m6 (warping constant)
+A = 5.0e-04         # m2 (approximate cross-sectional area)
 
 # Monosymmetric properties
 y0_positive_delta = -0.023669     # m (shear center offset for δ = +0.180)
@@ -198,13 +198,13 @@ beta_z_negative_delta = -0.051717
 D = 0.0756  # m (75.6 mm)
 
 # Scale factor for converting gamma_2 to P_c
-scale_N = np.sqrt(E * Iy * G * J) / L**2   # should be ≈ 39.14 N
-# scale_N = np.sqrt(E * Iy * G * J) / L**3   # should be ≈ 39.14 N
-scale_lb = scale_N / lb_to_N               # should be ≈ 8.80 lb
+scale_N = np.sqrt(E * Iy * G * J) / L**2   # should be 39.14 N
+# scale_N = np.sqrt(E * Iy * G * J) / L**3   # should be 39.14 N
+scale_lb = scale_N / lb_to_N               # should be 8.80 lb
 
 # K and detla factors
-K_factor = np.sqrt(np.pi**2 * E * Iw /(G * J * L**2))                   # should be ≈ 0.247
-delta_factor = (beta_z_positive_delta / L) * np.sqrt(E * Iy /(G * J))   # should be ≈ 0.180
+K_factor = np.sqrt(np.pi**2 * E * Iw /(G * J * L**2))                   # should be 0.247
+delta_factor = (beta_z_positive_delta / L) * np.sqrt(E * Iy /(G * J))   # should be 0.180
 
 # Conversion factor: epsilon to load height a (in meters)
 # epsilon = (a / L) * sqrt(E * Iy / (G * J))
