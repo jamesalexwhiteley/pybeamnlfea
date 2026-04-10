@@ -700,29 +700,29 @@ def thin_wall_stiffness_matrix_derived(E, G, A, Iy, Iz, Iw, J, L,
         for j in range(4):
             K[w_dofs[i], w_dofs[j]] += K_Pw[i, j]
     
-    # 3. P·r₀²·∫θx'² dx
-    K_Pt = P * r0_sq * K_Np_Np
-    for i in range(4):
-        for j in range(4):
-            K[t_dofs[i], t_dofs[j]] += K_Pt[i, j]
+    # # 3. P·r₀²·∫θx'² dx
+    # K_Pt = P * r0_sq * K_Np_Np
+    # for i in range(4):
+    #     for j in range(4):
+    #         K[t_dofs[i], t_dofs[j]] += K_Pt[i, j]
     
-    # 4. P·y₀·∫w'·θx' dx
-    if abs(y0) > 1e-16:
-        K_Py0 = P * y0 * K_Np_Np
-        for i in range(4):
-            for j in range(4):
-                val = w_sign[i] * K_Py0[i, j]
-                K[w_dofs[i], t_dofs[j]] += val
-                K[t_dofs[j], w_dofs[i]] += val
+    # # 4. P·y₀·∫w'·θx' dx
+    # if abs(y0) > 1e-16:
+    #     K_Py0 = P * y0 * K_Np_Np
+    #     for i in range(4):
+    #         for j in range(4):
+    #             val = w_sign[i] * K_Py0[i, j]
+    #             K[w_dofs[i], t_dofs[j]] += val
+    #             K[t_dofs[j], w_dofs[i]] += val
     
-    # 5. P·z₀·∫v'·θx' dx
-    if abs(z0) > 1e-16:
-        K_Pz0 = P * z0 * K_Np_Np
-        for i in range(4):
-            for j in range(4):
-                val = K_Pz0[i, j]
-                K[v_dofs[i], t_dofs[j]] += val
-                K[t_dofs[j], v_dofs[i]] += val
+    # # 5. P·z₀·∫v'·θx' dx
+    # if abs(z0) > 1e-16:
+    #     K_Pz0 = P * z0 * K_Np_Np
+    #     for i in range(4):
+    #         for j in range(4):
+    #             val = K_Pz0[i, j]
+    #             K[v_dofs[i], t_dofs[j]] += val
+    #             K[t_dofs[j], v_dofs[i]] += val
     
     # 6. ∫My·v''·θx dx (LTB coupling)
     for i in range(4):

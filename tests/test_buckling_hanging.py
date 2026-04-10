@@ -61,8 +61,8 @@ for iteration in range(max_iter):
     beam.add_elements([[i, i + 1] for i in range(n)], "concrete", "SY6", element_class=ThinWalledBeamElement) 
     
     # Supports: fix translations, free all rotations including twist
-    beam.add_boundary_condition(0, [0, 0, 0, 0, 1, 1, 1], BoundaryCondition)
-    beam.add_boundary_condition(n, [0, 0, 0, 0, 1, 1, 1], BoundaryCondition)
+    beam.add_boundary_condition(0, [0, 0, 0, 0, 1, 1, 0], BoundaryCondition)
+    beam.add_boundary_condition(n, [0, 0, 0, 0, 1, 1, 0], BoundaryCondition)
     
     # Rotational spring on twist DOF (dof_index=3 for θx) at each support
     # This represents the cable-height restoring effect
